@@ -1,11 +1,14 @@
- import './App.css'  
- import Navbar from './components/navbar'
+ import './App.css'   
+ import Button from './components/button'
 
 function App() { 
 
   return (
     <>
-     <Navbar />
+
+    <Button />
+
+
     </>
   )
 }

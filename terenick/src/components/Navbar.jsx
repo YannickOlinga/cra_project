@@ -6,10 +6,10 @@ export default function navbar() {
         <div className="logo"><span>T</span>erenick</div>
         <ul>
             <li>Home</li>
-            <li>About</li>
+            <li>A Propos</li>
             <li>Contact</li> 
         </ul>
-        <button>Get Started</button>
+        <button>Se Connecte</button>
        </nav>
        </>
     )
