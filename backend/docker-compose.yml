@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: TerenickDB
+      POSTGRES_PASSWORD: TerenierT*
+      POSTGRES_DB: TerenickDB
+    ports:
+      - '5433:5432'
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: .
+      dockerfile: dockerfile
+    restart: always
+    ports:
+      - '3000:3000'
+    environment:
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_USER: TerenickDB
+      DATABASE_PASSWORD: TerenierT*
+      DATABASE_NAME: TerenickDB
+    depends_on:
+      - postgres
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    command: npm run start:dev
+
+  frontend:
+    build:
+      context: ../terenick
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - '5173:5173'
+    volumes:
+      - ../terenick:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
