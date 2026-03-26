@@ -1,0 +1,251 @@
+.testimonials-section {
+  padding: 4rem 0;
+  background-color: #f8f9fa;
+  font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.testimonials-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.testimonials-header h2 {
+  font-size: 2.5rem;
+  color: #2c3e50;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.testimonials-header p {
+  font-size: 1.1rem;
+  color: #7f8c8d;
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.testimonials-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+
+/* Marquee container */
+.marquee-container {
+  overflow: hidden;
+  margin-bottom: 3rem;
+  position: relative;
+}
+
+.marquee-track {
+  display: flex;
+  animation: marquee 30s linear infinite;
+  gap: 2rem;
+  padding: 1rem 0;
+}
+
+.testimonial-card {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease; 
+  flex: 0 0 auto;
+  width: 350px;
+  margin-right: 2rem;
+}
+
+.testimonial-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Animation marquee */
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* Pause au survol */
+.marquee-container:hover .marquee-track {
+  animation-play-state: paused;
+}
+
+.testimonial-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+}
+
+.testimonial-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #3498db;
+}
+
+.testimonial-info {
+  flex: 1;
+}
+
+.testimonial-name {
+  font-size: 1.1rem;
+  color: #2c3e50;
+  margin-bottom: 0.2rem;
+  font-weight: 600;
+}
+
+.testimonial-role {
+  font-size: 0.9rem;
+  color: #3498db;
+  margin: 0;
+  font-weight: 500;
+}
+
+.testimonial-company {
+  font-size: 0.85rem;
+  color: #7f8c8d;
+  margin: 0;
+  font-style: italic;
+}
+
+.testimonial-rating {
+  display: flex;
+  gap: 2px;
+}
+
+.star {
+  font-size: 1rem;
+  color: #ddd;
+  transition: color 0.3s ease;
+}
+
+.star.filled {
+  color: #f39c12;
+}
+
+.testimonial-content {
+  color: #34495e;
+  line-height: 1.6;
+  font-size: 0.95rem;
+  font-style: italic;
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+.testimonial-content::before {
+  content: '"';
+  position: absolute;
+  left: 0;
+  top: -10px;
+  font-size: 3rem;
+  color: #3498db;
+  opacity: 0.3;
+  font-family: Georgia, serif;
+}
+
+.testimonials-footer {
+  text-align: center;
+  margin-top: 3rem;
+}
+
+.trust-badges {
+  display: flex;
+  justify-content: center;
+  gap: 3rem;
+  flex-wrap: wrap;
+}
+
+.badge-item {
+  text-align: center;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  min-width: 120px;
+  transition: transform 0.3s ease;
+}
+
+.badge-item:hover {
+  transform: translateY(-3px);
+}
+
+.badge-number {
+  display: block;
+  font-size: 2rem;
+  font-weight: bold;
+  color: #3498db;
+  margin-bottom: 0.5rem;
+}
+
+.badge-text {
+  font-size: 0.9rem;
+  color: #7f8c8d;
+  font-weight: 500;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .marquee-track {
+    animation-duration: 20s;
+  }
+  
+  .testimonial-card {
+    width: 300px;
+    padding: 1.5rem;
+  }
+  
+  .testimonials-header h2 {
+    font-size: 2rem;
+  }
+  
+  .trust-badges {
+    gap: 1.5rem;
+  }
+  
+  .badge-item {
+    min-width: 100px;
+    padding: 1rem;
+  }
+  
+  .testimonial-header {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .testimonial-avatar {
+    margin-bottom: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .marquee-track {
+    animation-duration: 15s;
+  }
+  
+  .testimonial-card {
+    width: 280px;
+    padding: 1rem;
+  }
+  
+  .testimonials-header h2 {
+    font-size: 1.8rem;
+  }
+  
+  .container {
+    padding: 0 1rem;
+  }
+}
