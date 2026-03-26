@@ -2,9 +2,11 @@ body{
     margin: 0;
     padding: 0; 
     align-items: center;
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
 }
 nav {
-    background-color: #fefefe;
+    background-color: transparent;
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
     padding: 1rem;
     text-align: center;
     display: flex;
@@ -13,12 +15,13 @@ nav {
     width: 80%;
     margin-left: 08%;
     margin-top: 02%;
+    position: fixed; 
     border-radius: 10px;
 }
 nav ul {
     list-style: none;
 
-    color: rgb(4, 193, 130);
+    color: rgb(255, 255, 255);
     display: flex;
     justify-content: center;
     gap: 1rem;
@@ -30,7 +33,7 @@ nav ul li {
 }
 nav .logo {
     font-size: 1.5rem;
-    color: rgb(0, 0, 0);
+    color: rgb(255, 255, 255);
     font-weight: bold;
 }
 
@@ -41,13 +44,43 @@ nav .logo span {
 }
 nav button {
     padding: 0.5rem 1rem;
-    background-color: rgb(4, 193, 130);
-    color: #fff;
-    border: none;
+    background-color: transparent;
+    color: rgb(255, 255, 255);
+    border: 2px solid rgb(255, 255, 255);
     border-radius: 5px;
     cursor: pointer;
     font-size: 1.2rem;
 }
 nav button:hover {
-    background-color: rgb(3, 161, 108);
+    background-color: rgb(255, 255, 255);
+    color: rgb(0, 0, 0);
+    transition: all 0.3s ease;
+}
+
+/* Effet blur au scroll */
+nav.scrolled {
+    background-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+}
+
+nav.scrolled ul {
+    color: rgb(0, 0, 0);
+}
+
+nav.scrolled .logo {
+    color: rgb(0, 0, 0);
+}
+
+nav.scrolled button {
+    background-color: transparent;
+    border: 2px solid rgba(0, 0, 0, 0.8);
+    color: rgb(0, 0, 0);
+}
+
+nav.scrolled button:hover {
+    background-color: rgb(0, 0, 0);
+    color: #ffffff;
 }
