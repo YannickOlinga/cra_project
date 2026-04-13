@@ -16,7 +16,7 @@ function login() {
       <input type="password" placeholder="Mot de passe" />
       <button type="submit" className="submit">Se connecter</button>
       <p>Vous n'avez pas de compte ? <a href="/register">S'inscrire</a></p>
-      <p>Mot de passe oublié ? <a href="/forgot-password">Cliquez ici</a></p>
+      <p>Mot de passe oublié ? <a href="/sidebar">Cliquez ici</a></p>
       <p><a href="/">Retour à l'accueil</a></p>
 
     </form>
