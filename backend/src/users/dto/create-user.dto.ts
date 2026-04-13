@@ -12,11 +12,11 @@ export class CreateUserDto {
   last_name: string;
 
   @IsEmail()
-  @MaxLength(255)
+  @MaxLength(30)
   email: string;
 
   @IsString()
   @MinLength(8)
-  @MaxLength(255)
+  @MaxLength(100)
   password: string;
 }
