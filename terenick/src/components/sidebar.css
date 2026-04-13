@@ -1,0 +1,8 @@
+@import 'normalize.css';
+
+/* FlyonUI handles most styling - minimal customizations needed */
+
+/* Ensure icons are loaded properly */
+@import url('https://cdn.jsdelivr.net/npm/@tabler/icons@latest/iconfont/tabler-icons.min.css');
+
+/* Any custom overrides for FlyonUI sidebar can go here */
