@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './compteRendu.css';
+import AddCRAModal from '../components/AddCRAModal';
 
 export default function CompteRendu() {
   const [activities] = useState([
@@ -13,6 +14,22 @@ export default function CompteRendu() {
       etatClass: 'in-progress'
     }
   ]);
+
+  const [showModal, setShowModal] = useState(false);
+
+  const handleOpenModal = () => {
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+  };
+
+  const handleGenerateCRA = () => {
+    // Logique pour générer le CRA
+    console.log('Génération du CRA...');
+    setShowModal(false);
+  };
 
   return (
     <div className="compte-rendu-container">
@@ -86,7 +103,7 @@ export default function CompteRendu() {
         </header>
 
         <div className="content-actions">
-          <button className="btn btn-primary">
+          <button className="btn btn-primary" onClick={handleOpenModal}>
             <span className="btn-icon">+</span>
             Ajouter un CRA
           </button>
@@ -153,6 +170,13 @@ export default function CompteRendu() {
           </table>
         </div>
       </main>
+
+      {/* Modal */}
+      <AddCRAModal
+        isOpen={showModal}
+        onClose={handleCloseModal}
+        onGenerate={handleGenerateCRA}
+      />
     </div>
   );
 }

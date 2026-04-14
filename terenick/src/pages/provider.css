@@ -1,0 +1,27 @@
+
+form {
+    display: flex; 
+    flex-direction: column;
+    align-items: center;
+    justify-content: center; 
+    background-color: #000000a7;
+    max-width: 400px; 
+    padding: 20px;
+    height: 560px;
+    border-radius: 0px 5px 5px 0px;
+}
+.img_div {
+    background-image: url('../../public/group-diverse-people-having-business-meeting.jpg');
+    background-size: cover;
+    background-position: center;
+    width: 40%;
+    height: 600px;
+    border-radius: 5px 0px 0px 5px;
+}
+.provider-container {
+    display: flex; 
+    justify-content: center;
+    align-items: center;
+    margin-top: 5%; 
+}
+
