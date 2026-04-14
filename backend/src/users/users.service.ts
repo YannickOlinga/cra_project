@@ -50,6 +50,13 @@ export class UsersService {
     }
   }
 
+  async findByEmailWithPassword(email: string): Promise<User | null> {
+    return this.usersRepository.findOne({
+      where: { email },
+      select: ['id', 'email', 'password', 'first_name', 'last_name'], // Explicitly select password
+    });
+  }
+
   async findAll(): Promise<SafeUser[]> {
     const users = await this.usersRepository.find();
     return users.map((user) => this.toSafeUser(user));

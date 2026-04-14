@@ -3,7 +3,7 @@ import { ProvidersService } from './providers.service';
 import { ProvidersController } from './providers.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Provider } from './entities/provider.entity';
-import { User } from 'src/users/entities/user.entity';
+import { User } from '../users/entities/user.entity';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Provider, User])],

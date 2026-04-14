@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -12,6 +13,9 @@ import { Provider } from './providers/entities/provider.entity';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true, // Rends les variables d'environnement globales
+    }),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DATABASE_HOST ?? 'localhost',
@@ -20,7 +24,7 @@ import { Provider } from './providers/entities/provider.entity';
       password: process.env.DATABASE_PASSWORD ?? 'TerenierT*',
       database: process.env.DATABASE_NAME ?? 'TerenickDB',
       entities: [User, Customer, Provider],
-      synchronize: true,
+      synchronize: process.env.TYPEORM_SYNCHRONIZE === 'true',
     }),
     UsersModule,
     ProvidersModule,

@@ -4,7 +4,7 @@ import { UpdateCustomerDto } from './dto/update-customer.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Customer } from './entities/customer.entity';
-import { User } from 'src/users/entities/user.entity';
+import { User } from '../users/entities/user.entity';
 
 @Injectable()
 export class CustomersService {
@@ -32,6 +32,13 @@ export class CustomersService {
 
   async findAll(): Promise<Customer[]> {
     return this.customersRepository.find({
+      relations: ['user'],
+    });
+  }
+
+  async findOneByUserId(userId: number): Promise<Customer | null> {
+    return this.customersRepository.findOne({
+      where: { user: { id: userId } },
       relations: ['user'],
     });
   }
