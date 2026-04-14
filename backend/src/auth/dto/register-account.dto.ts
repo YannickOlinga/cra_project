@@ -28,15 +28,17 @@ export class RegisterAccountDto {
   last_name!: string;
 
   @IsEmail()
-  @MaxLength(255)
+  @MaxLength(30)
   email!: string;
 
   @IsString()
   @MinLength(8)
-  @MaxLength(255)
+  @MaxLength(100)
   password!: string;
 
-  @ValidateIf((payload) => payload.role === AccountRole.Customer)
+  @ValidateIf(
+    (payload: Record<string, any>) => payload.role === AccountRole.Customer,
+  )
   @IsString()
   @IsNotEmpty()
   @MinLength(6)

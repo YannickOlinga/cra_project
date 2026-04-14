@@ -4,7 +4,7 @@ import { UpdateProviderDto } from './dto/update-provider.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Provider } from './entities/provider.entity';
-import { User } from 'src/users/entities/user.entity';
+import { User } from '../users/entities/user.entity';
 
 @Injectable()
 export class ProvidersService {
@@ -36,6 +36,13 @@ export class ProvidersService {
 
   async findAll(): Promise<Provider[]> {
     return this.providersRepository.find({
+      relations: ['user'],
+    });
+  }
+
+  async findOneByUserId(userId: number): Promise<Provider | null> {
+    return this.providersRepository.findOne({
+      where: { user: { id: userId } },
       relations: ['user'],
     });
   }
