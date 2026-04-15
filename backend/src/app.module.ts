@@ -10,6 +10,7 @@ import { AuthModule } from './auth/auth.module';
 import { User } from './users/entities/user.entity';
 import { Customer } from './customers/entities/customer.entity';
 import { Provider } from './providers/entities/provider.entity';
+import { AssignmentsModule } from './assignments/assignments.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { Provider } from './providers/entities/provider.entity';
     ProvidersModule,
     CustomersModule,
     AuthModule,
+    AssignmentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
