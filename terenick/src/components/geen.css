@@ -26,6 +26,15 @@
     text-align: center;
     margin-bottom: 3rem;
 }
+.containers {
+    background: url('../../public/Capture\ d’écran\ 2026-04-14\ à\ 10.06.31.png');
+    height: 800px;
+    background-size: cover;
+    background-position: center;
+    margin-top:100px;
+    background-repeat: no-repeat;
+    
+}
 
 .div_text h2 {
     font-size: 2.5rem;

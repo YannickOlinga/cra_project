@@ -34,11 +34,7 @@
   text-decoration: none;
 }
 
-.sidebar-nav {
-  flex: 1;
-  padding: 1.5rem 0;
-  overflow-y: auto;
-}
+
 
 .nav-section {
   margin-bottom: 2rem;
@@ -61,20 +57,20 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem 1.5rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgb(25, 120, 61);
   text-decoration: none;
   transition: all 0.2s ease;
   border-left: 3px solid transparent;
 }
 
 .nav-link:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgb(1, 96, 38);
   color: white;
 }
 
 .nav-item.active .nav-link {
   background-color: rgba(255, 255, 255, 0.15);
-  color: white;
+  color: rgba(3, 83, 39, 0.661);
   border-left-color: #27ae60;
 }
 
