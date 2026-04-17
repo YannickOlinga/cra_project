@@ -18,7 +18,20 @@ export default function CompteRendu() {
   const [showModal, setShowModal] = useState(false);
 
   const handleOpenModal = () => {
+    console.log('Bouton Ajouter un CRA cliqué');
     setShowModal(true);
+    
+    // Test pour vérifier si le modal est bien dans le DOM
+    setTimeout(() => {
+      const modal = document.querySelector('.modal-overlay');
+      if (modal) {
+        console.log('Modal trouvé dans le DOM:', modal);
+        console.log('Modal visible:', window.getComputedStyle(modal).display !== 'none');
+        console.log('Modal z-index:', window.getComputedStyle(modal).zIndex);
+      } else {
+        console.log('Modal NON trouvé dans le DOM!');
+      }
+    }, 100);
   };
 
   const handleCloseModal = () => {
@@ -55,7 +68,7 @@ export default function CompteRendu() {
                 <a href="#" className="nav-link">
                   <span className="nav-icon"></span>
                   <span>Missions</span>
-                </a>, 
+                </a>
               </li>
               <li className="nav-item">
                 <a href="#" className="nav-link">
@@ -84,15 +97,58 @@ export default function CompteRendu() {
             </ul>
           </div>
           
+          <div className="nav-section">
+            <h3 className="nav-section-title">MON COMPTE</h3>
+            <ul className="nav-list">
+              <li className="nav-item">
+                <a href="#" className="nav-link">
+                  <span className="nav-icon"></span>
+                  <span>Mon compte</span>
+                </a>
+              </li>
+              <li className="nav-item">
+                <a href="#" className="nav-link">
+                  <span className="nav-icon"></span>
+                  <span>Paramètres</span>
+                </a>
+              </li>
+              <li className="nav-item">
+                <a href="#" className="nav-link">
+                  <span className="nav-icon"></span>
+                  <span>Abonnement</span>
+                </a>
+              </li>
+              <li className="nav-item">
+                <a href="#" className="nav-link">
+                  <span className="nav-icon"></span>
+                  <span>Intégrations</span>
+                </a>
+              </li>
+              <li className="nav-item">
+                <a href="#" className="nav-link">
+                  <span className="nav-icon"></span>
+                  <span>Assistance</span>
+                </a>
+              </li>
+              <li className="nav-item">
+                <a href="#" className="nav-link">
+                  <span className="nav-icon"></span>
+                  <span>Déconnexion</span>
+                </a>
+              </li>
+            </ul>
+          </div>
         </nav>
         
+        <div className="sidebar-footer">
+          <p className="copyright">© 2026. Propulsé par Timizer</p>
+        </div>
       </aside>
 
       {/* Main Content */}
       <main className="main-content">
         <header className="content-header">
           <h1 className="page-title">Mes comptes rendus d'activités</h1>
-          
           <div className="user-info">
             <div className="user-details">
               <span className="user-name">Sylvestre Yannick Noah Olinga</span>
@@ -103,7 +159,10 @@ export default function CompteRendu() {
         </header>
 
         <div className="content-actions">
-          <button className="btn btn-primary" onClick={handleOpenModal}>
+          <button 
+            className="btn btn-primary" 
+            onClick={handleOpenModal}
+          >
             <span className="btn-icon">+</span>
             Ajouter un CRA
           </button>
@@ -143,7 +202,7 @@ export default function CompteRendu() {
               </tr>
             </thead>
             <tbody>
-              {activities.map((activity) => (
+              {activities.map(activity => (
                 <tr key={activity.id}>
                   <td>{activity.periode}</td>
                   <td>{activity.mission}</td>

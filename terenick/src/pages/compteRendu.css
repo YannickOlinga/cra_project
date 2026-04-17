@@ -10,36 +10,14 @@
 .sidebar {
   width: 280px;
   background: white;
-  color: rgb(25, 120, 61);
-  display: flex;
-  flex-direction: column;
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  color: rgb(25, 120, 61);  
 }
+ 
 
-.sidebar-header {
-  padding: 2rem 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
+ 
+ 
 
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.logo-text {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: rgb(25, 120, 61);
-  text-decoration: none;
-}
-
-
-
-.nav-section {
-  margin-bottom: 2rem;
-}
-
+ 
  
 
 .nav-list {
@@ -156,6 +134,9 @@
   display: flex;
   gap: 1rem;
   margin-bottom: 2rem;
+  position: relative;
+  z-index: 10;
+  pointer-events: auto;
 }
 
 .btn {
@@ -174,6 +155,8 @@
 .btn-primary {
   background: linear-gradient(135deg, #27ae60, #229954);
   color: white;
+  cursor: pointer;
+  pointer-events: auto;
 }
 
 .btn-primary:hover {
@@ -210,12 +193,7 @@
 }
 
 /* Tabs */
-.tabs {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  border-bottom: 1px solid #e9ecef;
-}
+
 
 .tab {
   padding: 0.75rem 1.5rem;
@@ -295,7 +273,6 @@
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
 }
 
 .activities-table {
@@ -371,6 +348,616 @@
   border-color: #adb5bd;
 }
 
+/* Stats Section */
+.stats-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+/* Controls Section */
+.controls-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+/* Missions List */
+.missions-list h2 {
+  color: #2c3e50;
+  margin-bottom: 1.5rem;
+  font-size: 1.8rem;
+}
+
+.missions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 1.5rem;
+}
+
+.mission-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mission-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.mission-card .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.mission-card .card-header h3 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1.3rem;
+  font-weight: 600;
+  flex: 1;
+}
+
+.mission-card .card-meta {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.mission-card .client {
+  background: #e3f2fd;
+  color: #1e40af;
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.mission-card .priority {
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.3rem 0.8rem;
+  border-radius: 6px;
+}
+
+.mission-card .priority-haute {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.mission-card .priority-moyenne {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.mission-card .priority-basse {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+
+.mission-card .description {
+  color: #4b5563;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.mission-card .dates-section {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.mission-card .date-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.mission-card .date-label {
+  font-size: 0.8rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.mission-card .date-value {
+  font-size: 0.9rem;
+  color: #2c3e50;
+  font-weight: 500;
+}
+
+.mission-card .progress-section {
+  margin-bottom: 1rem;
+}
+
+.mission-card .progress-label {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+.mission-card .progress-bar {
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.mission-card .progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #27ae60, #229954);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.mission-card .status-section {
+  text-align: right;
+}
+
+.mission-card .status {
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  display: inline-block;
+}
+
+.mission-card .status-en-cours {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.mission-card .status-en-attente {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.mission-card .status-termine {
+  background: #d1fae5;
+  color: #16a34a;
+}
+
+/* Clients List */
+.clients-list h2 {
+  color: #2c3e50;
+  margin-bottom: 1.5rem;
+  font-size: 1.8rem;
+}
+
+.clients-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 1.5rem;
+}
+
+.client-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.client-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.client-card .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.client-card .card-header h3 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1.3rem;
+  font-weight: 600;
+  flex: 1;
+}
+
+.client-card .card-info {
+  margin-bottom: 1rem;
+}
+
+.client-card .info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f1f3f4;
+}
+
+.client-card .info-row:last-child {
+  border-bottom: none;
+}
+
+.client-card .info-label {
+  font-size: 0.9rem;
+  color: #6b7280;
+  font-weight: 500;
+  min-width: 80px;
+}
+
+.client-card .info-value {
+  font-size: 0.9rem;
+  color: #495057;
+  font-weight: 500;
+  text-align: right;
+}
+
+.client-card .card-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.client-card .status {
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  display: inline-block;
+}
+
+.client-card .status-actif {
+  background: #d1fae5;
+  color: #16a34a;
+}
+
+.client-card .status-inactif {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.client-card .projects-count {
+  background: #e3f2fd;
+  color: #1e40af;
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.client-card .dates-section {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.client-card .date-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.client-card .date-label {
+  font-size: 0.8rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.client-card .date-value {
+  font-size: 0.9rem;
+  color: #2c3e50;
+  font-weight: 500;
+}
+
+/* Tâches List */
+.taches-list h2 {
+  color: #2c3e50;
+  margin-bottom: 1.5rem;
+  font-size: 1.8rem;
+}
+
+.taches-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 1.5rem;
+}
+
+.tache-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tache-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.tache-card .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.tache-card .card-header h3 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1.3rem;
+  font-weight: 600;
+  flex: 1;
+}
+
+.tache-card .card-meta {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.tache-card .mission {
+  background: #e3f2fd;
+  color: #1e40af;
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.tache-card .echeance {
+  font-size: 0.8rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.tache-card .status-en-cours {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.tache-card .status-en-attente {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.tache-card .status-termine {
+  background: #d1fae5;
+  color: #16a34a;
+}
+
+/* Notes de frais List */
+.notes-list h2 {
+  color: #2c3e50;
+  margin-bottom: 1.5rem;
+  font-size: 1.8rem;
+}
+
+.notes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 1.5rem;
+}
+
+.note-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.note-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.note-card .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.note-card .card-header h3 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1.3rem;
+  font-weight: 600;
+  flex: 1;
+}
+
+.note-card .card-meta {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.note-card .categorie {
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  display: inline-block;
+}
+
+.note-card .categorie-repas {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.note-card .categorie-transport {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.note-card .categorie-hebergement {
+  background: #e0e7ff;
+  color: #3b82f6;
+}
+
+.note-card .categorie-materiel {
+  background: #f3e8ff;
+  color: #1e40af;
+}
+
+.note-card .montant {
+  font-weight: 600;
+  font-size: 1.1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  color: white;
+}
+
+.note-card .montant-rejete {
+  background: #ef4444;
+}
+
+.note-card .date {
+  font-size: 0.8rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.note-card .status-approuve {
+  background: #d1fae5;
+  color: #16a34a;
+}
+
+.note-card .status-en-attente {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.note-card .status-rejete {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* Reporting Page */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.filter-controls {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.year-input {
+  padding: 0.75rem 1rem;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: white;
+  color: #495057;
+  width: 120px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+}
+
+.rapports-list h2 {
+  color: #2c3e50;
+  margin-bottom: 1.5rem;
+  font-size: 1.8rem;
+}
+
+.rapports-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(500px, 1fr));
+  gap: 1.5rem;
+}
+
+.rapport-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.rapport-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.rapport-card .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.rapport-card .card-header h3 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1.3rem;
+  font-weight: 600;
+  flex: 1;
+}
+
+.rapport-card .card-info {
+  margin-bottom: 1rem;
+}
+
+.rapport-card .info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f1f3f4;
+}
+
+.rapport-card .info-row:last-child {
+  border-bottom: none;
+}
+
+.rapport-card .info-label {
+  font-size: 0.9rem;
+  color: #6b7280;
+  font-weight: 500;
+  min-width: 80px;
+}
+
+.rapport-card .info-value {
+  font-size: 0.9rem;
+  color: #495057;
+  font-weight: 500;
+  text-align: right;
+}
+
+.rapport-card .status-termine {
+  background: #d1fae5;
+  color: #16a34a;
+}
+
+.rapport-card .status-en-cours {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
 /* Responsive Design */
 @media (max-width: 1024px) {
   .sidebar {
@@ -402,18 +989,17 @@
     flex-direction: column;
   }
   
-  .table-controls {
+  .controls-section {
     flex-direction: column;
     align-items: stretch;
   }
   
-  .activities-table {
-    font-size: 0.8rem;
+  .missions-grid {
+    grid-template-columns: 1fr;
   }
   
-  .activities-table th,
-  .activities-table td {
-    padding: 0.75rem 0.5rem;
+  .mission-card .dates-section {
+    flex-direction: column;
   }
 }
 
@@ -426,7 +1012,8 @@
     font-size: 1.5rem;
   }
   
-  .action-buttons {
-    flex-direction: column;
+  .stats-section {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
   }
 }

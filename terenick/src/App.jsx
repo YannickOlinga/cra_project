@@ -22,9 +22,15 @@ function RequireAuth({ children }) {
   return children;
 }
 
+import Missions from './pages/missions';
+import Clients from './pages/clients';
+import Taches from './pages/taches';
+import NotesFrais from './pages/notesFrais';
+import Reporting from './pages/reporting';
+
 export default function App(){
 return (
-<Router>
+<Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
 <Routes>
 <Route path="/" element={<Home />} />
 <Route path="/login" element={<Login />} />
