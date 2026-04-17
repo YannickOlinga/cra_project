@@ -34,11 +34,7 @@
   text-decoration: none;
 }
 
-.sidebar-nav {
-  flex: 1;
-  padding: 1.5rem 0;
-  overflow-y: auto;
-}
+
 
 .nav-section {
   margin-bottom: 2rem;
