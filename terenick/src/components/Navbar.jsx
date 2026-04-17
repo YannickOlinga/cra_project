@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './navbar.css';
 
 export default function Navbar() {
+    const navigate = useNavigate();
     const [scrolled, setScrolled] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [session, setSession] = useState(null);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -15,6 +18,20 @@ export default function Navbar() {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
+    useEffect(() => {
+        const storedSession = localStorage.getItem('authSession');
+        if (!storedSession) {
+            setSession(null);
+            return;
+        }
+
+        try {
+            setSession(JSON.parse(storedSession));
+        } catch {
+            setSession(null);
+        }
+    }, []);
+
     const toggleMobileMenu = () => {
         setMobileMenuOpen(!mobileMenuOpen);
     };
@@ -22,6 +39,31 @@ export default function Navbar() {
     const closeMobileMenu = () => {
         setMobileMenuOpen(false);
     };
+
+    const handleLogout = () => {
+        localStorage.removeItem('authSession');
+        setSession(null);
+        setMobileMenuOpen(false);
+        navigate('/');
+    };
+
+    const handleProtectedNavigation = (event, path) => {
+        event.preventDefault();
+        closeMobileMenu();
+
+        if (!session?.token) {
+            navigate('/login');
+            return;
+        }
+
+        navigate(path);
+    };
+
+    const initials = (() => {
+        const firstName = session?.user?.first_name?.trim?.() ?? '';
+        const lastName = session?.user?.last_name?.trim?.() ?? '';
+        return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || 'U';
+    })();
 
     return (
        <>
@@ -33,13 +75,26 @@ export default function Navbar() {
             <li><a href="#home" onClick={closeMobileMenu}>Home</a></li>
             <li><a href="#about" onClick={closeMobileMenu}>A Propos</a></li>
             <li><a href="#contact" onClick={closeMobileMenu}>Contact</a></li>
-            <li><a href="/compte-rendu" onClick={closeMobileMenu}>Compte Rendu</a></li>
+            <li><a href="/compte-rendu" onClick={(event) => handleProtectedNavigation(event, '/compte-rendu')}>Compte Rendu</a></li>
         </ul>
 
         {/* Bouton Desktop */}
-        <a href="/login" className="desktop-only">
-            <button>Se connecter</button>
-        </a>
+        {session ? (
+            <div className="desktop-only user-actions">
+                <a href="/dashboard" className="user-badge-link" title="Dashboard">
+                    <div className="user-badge">
+                        {initials}
+                    </div>
+                </a>
+                <button type="button" className="logout-button" onClick={handleLogout}>
+                    Déconnexion
+                </button>
+            </div>
+        ) : (
+            <a href="/login" className="desktop-only">
+                <button>Se connecter</button>
+            </a>
+        )}
 
         {/* Menu Hamburger Mobile */}
         <div className="mobile-menu-toggle" onClick={toggleMobileMenu}>
@@ -56,11 +111,22 @@ export default function Navbar() {
                 <li><a href="#home" onClick={closeMobileMenu}>Home</a></li>
                 <li><a href="#about" onClick={closeMobileMenu}>A Propos</a></li>
                 <li><a href="#contact" onClick={closeMobileMenu}>Contact</a></li>
-                <li><a href="/compte-rendu" onClick={closeMobileMenu}>Compte Rendu</a></li>
+                <li><a href="/compte-rendu" onClick={(event) => handleProtectedNavigation(event, '/compte-rendu')}>Compte Rendu</a></li>
                 <li className="mobile-button">
-                    <a href="/login" onClick={closeMobileMenu}>
-                        <button>Se connecter</button>
-                    </a>
+                    {session ? (
+                        <div className="mobile-user-actions">
+                            <a href="/dashboard" onClick={closeMobileMenu} className="user-badge-link">
+                                <div className="user-badge mobile-user-badge">{initials}</div>
+                            </a>
+                            <button type="button" className="logout-button mobile-logout-button" onClick={handleLogout}>
+                                Déconnexion
+                            </button>
+                        </div>
+                    ) : (
+                        <a href="/login" onClick={closeMobileMenu}>
+                            <button>Se connecter</button>
+                        </a>
+                    )}
                 </li>
             </ul>
         </div>

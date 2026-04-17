@@ -24,6 +24,7 @@ import { Customer } from '../customers/entities/customer.entity';
 import { Authaccount } from '../auth/decorators/authaccount.decorator';
 import { UseGuards } from '@nestjs/common';
 import { AuthGuard } from '../auth/auth.guard';
+import type { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 
 @ApiResponse({
   status: 201,
@@ -52,6 +53,11 @@ export class UsersController {
     return this.usersService.findAll();
   }
 
+  @Get('/me')
+  findMe(@Authaccount() auth: AuthenticatedUser) {
+    return this.usersService.findOne(auth.sub);
+  }
+
   @Get('/:id')
   @ApiOkResponse({ description: 'The user', type: CreateUserDto })
   @ApiParam({
@@ -62,9 +68,18 @@ export class UsersController {
   })
   async findOne(
     @Param('id', ParseIntPipe) id: number,
-    @Authaccount() auth: any,
+    @Authaccount() auth: AuthenticatedUser,
   ) {
+    void auth;
     return this.usersService.findOne(id);
+  }
+
+  @Put('/me')
+  updateMe(
+    @Authaccount() auth: AuthenticatedUser,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
+    return this.usersService.update(auth.sub, updateUserDto);
   }
 
   @Put('/:id')
