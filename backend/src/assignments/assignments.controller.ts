@@ -14,7 +14,7 @@ import { CreateAssignmentDto } from './dto/create-assignment.dto';
 import { UpdateAssignmentDto } from './dto/update-assignment.dto';
 import { AuthGuard } from '../auth/auth.guard';
 import { Authaccount } from '../auth/decorators/authaccount.decorator';
-import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
+import type { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 import {
   ApiBearerAuth,
   ApiBasicAuth,

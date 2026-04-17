@@ -15,7 +15,7 @@ import { CreateActivityReportsLineDto } from './dto/create-activity-reports-line
 import { UpdateActivityReportsLineDto } from './dto/update-activity-reports-line.dto';
 import { AuthGuard } from '../auth/auth.guard';
 import { Authaccount } from '../auth/decorators/authaccount.decorator';
-import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
+import type { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 
 @UseGuards(AuthGuard)
 @Controller('activity-reports-lines')
