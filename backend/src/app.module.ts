@@ -11,6 +11,9 @@ import { User } from './users/entities/user.entity';
 import { Customer } from './customers/entities/customer.entity';
 import { Provider } from './providers/entities/provider.entity';
 import { AssignmentsModule } from './assignments/assignments.module';
+import { ActivityReportsModule } from './activity-reports/activity-reports.module';
+import { ActivityReportsCostsModule } from './activity-reports-costs/activity-reports-costs.module';
+import { ActivityReportsLinesModule } from './activity-reports-lines/activity-reports-lines.module';
 
 @Module({
   imports: [
@@ -32,6 +35,9 @@ import { AssignmentsModule } from './assignments/assignments.module';
     CustomersModule,
     AuthModule,
     AssignmentsModule,
+    ActivityReportsModule,
+    ActivityReportsCostsModule,
+    ActivityReportsLinesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
