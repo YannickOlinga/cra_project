@@ -10,6 +10,7 @@ import { CustomersService } from '../customers/customers.service';
 import { ProvidersService } from '../providers/providers.service';
 import { AccountRole, RegisterAccountDto } from './dto/register-account.dto';
 import { LoginDto } from './dto/login.dto';
+import { AuthenticatedUser } from './interfaces/authenticated-user.interface';
 
 import { Customer } from '../customers/entities/customer.entity';
 import { Provider } from '../providers/entities/provider.entity';
@@ -58,7 +59,7 @@ export class AuthService {
       }
     }
 
-    const payload = {
+    const payload: AuthenticatedUser = {
       sub: user.id,
       email: user.email,
       role,

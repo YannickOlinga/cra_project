@@ -10,6 +10,7 @@ import { CreateAssignmentDto } from './dto/create-assignment.dto';
 import { UpdateAssignmentDto } from './dto/update-assignment.dto';
 import { Assignment } from './entities/assignment.entity';
 import { AccountRole } from '../auth/dto/register-account.dto';
+import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 
 @Injectable()
 export class AssignmentsService {
@@ -18,7 +19,10 @@ export class AssignmentsService {
     private readonly assignmentsRepository: Repository<Assignment>,
   ) {}
 
-  async create(createAssignmentDto: CreateAssignmentDto, authUser: any) {
+  async create(
+    createAssignmentDto: CreateAssignmentDto,
+    authUser: AuthenticatedUser,
+  ) {
     if (
       createAssignmentDto.hourly_rate <= 0 ||
       createAssignmentDto.budget <= 0
@@ -51,8 +55,8 @@ export class AssignmentsService {
     return this.assignmentsRepository.save(assignment);
   }
 
-  async findAll(authUser: any) {
-    const whereCondition = {};
+  async findAll(authUser: AuthenticatedUser) {
+    const whereCondition: Partial<Assignment> = {};
     if (authUser.role === AccountRole.Customer) {
       whereCondition['customers_id'] = authUser.profileId;
     } else if (authUser.role === AccountRole.Provider) {
@@ -65,8 +69,8 @@ export class AssignmentsService {
     });
   }
 
-  async findOne(id: number, authUser: any) {
-    const whereCondition: any = { id };
+  async findOne(id: number, authUser: AuthenticatedUser) {
+    const whereCondition: Partial<Assignment> = { id };
     if (authUser.role === AccountRole.Customer) {
       whereCondition['customers_id'] = authUser.profileId;
     } else if (authUser.role === AccountRole.Provider) {
@@ -89,7 +93,7 @@ export class AssignmentsService {
   async update(
     id: number,
     updateAssignmentDto: UpdateAssignmentDto,
-    authUser: any,
+    authUser: AuthenticatedUser,
   ) {
     const assignment = await this.findOne(id, authUser);
 
@@ -111,7 +115,7 @@ export class AssignmentsService {
     return this.assignmentsRepository.save(assignment);
   }
 
-  async remove(id: number, authUser: any) {
+  async remove(id: number, authUser: AuthenticatedUser) {
     const assignment = await this.findOne(id, authUser);
 
     if (authUser.role !== AccountRole.Customer) {

@@ -14,6 +14,7 @@ import { CreateAssignmentDto } from './dto/create-assignment.dto';
 import { UpdateAssignmentDto } from './dto/update-assignment.dto';
 import { AuthGuard } from '../auth/auth.guard';
 import { Authaccount } from '../auth/decorators/authaccount.decorator';
+import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 import {
   ApiBearerAuth,
   ApiBasicAuth,
@@ -39,7 +40,7 @@ export class AssignmentsController {
   @Post('/')
   create(
     @Body() createAssignmentDto: CreateAssignmentDto,
-    @Authaccount() auth: any,
+    @Authaccount() auth: AuthenticatedUser,
   ) {
     return this.assignmentsService.create(createAssignmentDto, auth);
   }
@@ -49,7 +50,7 @@ export class AssignmentsController {
     description: 'List of assignments',
     type: [CreateAssignmentDto],
   })
-  findAll(@Authaccount() auth: any) {
+  findAll(@Authaccount() auth: AuthenticatedUser) {
     return this.assignmentsService.findAll(auth);
   }
 
@@ -63,7 +64,10 @@ export class AssignmentsController {
     type: Number,
     description: 'The ID of the assignment',
   })
-  findOne(@Param('id', ParseIntPipe) id: number, @Authaccount() auth: any) {
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @Authaccount() auth: AuthenticatedUser,
+  ) {
     return this.assignmentsService.findOne(id, auth);
   }
 
@@ -75,7 +79,7 @@ export class AssignmentsController {
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateAssignmentDto: UpdateAssignmentDto,
-    @Authaccount() auth: any,
+    @Authaccount() auth: AuthenticatedUser,
   ) {
     return this.assignmentsService.update(id, updateAssignmentDto, auth);
   }
@@ -85,7 +89,10 @@ export class AssignmentsController {
     description: 'Assignment removed',
     type: CreateAssignmentDto,
   })
-  remove(@Param('id', ParseIntPipe) id: number, @Authaccount() auth: any) {
+  remove(
+    @Param('id', ParseIntPipe) id: number,
+    @Authaccount() auth: AuthenticatedUser,
+  ) {
     return this.assignmentsService.remove(id, auth);
   }
 }
