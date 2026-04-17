@@ -59,11 +59,15 @@ export class AuthService {
       }
     }
 
+    if (!profile?.id) {
+      throw new UnauthorizedException('No profile linked to this account');
+    }
+
     const payload: AuthenticatedUser = {
       sub: user.id,
       email: user.email,
       role,
-      profileId: profile?.id,
+      profileId: profile.id,
     };
     return {
       access_token: await this.jwtService.signAsync(payload),
