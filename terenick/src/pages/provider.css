@@ -1,15 +1,16 @@
-
 form {
-    display: flex; 
+    display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center; 
+    justify-content: center;
+    gap: 14px;
     background-color: #000000a7;
-    max-width: 400px; 
+    max-width: 400px;
     padding: 20px;
     height: 560px;
     border-radius: 0px 5px 5px 0px;
 }
+
 .img_div {
     background-image: url('../../public/group-diverse-people-having-business-meeting.jpg');
     background-size: cover;
@@ -19,9 +20,63 @@ form {
     border-radius: 5px 0px 0px 5px;
 }
 .provider-container {
-    display: flex; 
+    display: flex;
     justify-content: center;
     align-items: center;
-    margin-top: 5%; 
+    margin-top: 5%;
 }
 
+.role-group {
+    width: 100%;
+    color: white;
+}
+
+.role-title {
+    margin: 0 0 10px;
+    font-weight: 700;
+}
+
+.role-option {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 10px;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.role-option.selected {
+    background: rgba(244, 180, 0, 0.18);
+    border-color: #f4b400;
+}
+
+.role-option input[type='radio'] {
+    margin: 0;
+    width: auto;
+    flex: 0 0 auto;
+}
+
+.role-option span {
+    flex: 0 1 auto;
+}
+
+.form-message {
+    width: 100%;
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+.form-message.error {
+    color: #ffb3b3;
+}
+
+.form-message.success {
+    color: #bff0c9;
+}
