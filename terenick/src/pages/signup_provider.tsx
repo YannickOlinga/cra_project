@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './provider.css';
 
-type Role = 'provider' | 'customer';
+type Role = 'provider' | 'customer'; 
 
 const apiBaseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 function SignupProvider() {
