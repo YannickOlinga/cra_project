@@ -15,7 +15,6 @@
     "@fullcalendar/list": "^6.1.20",
     "@fullcalendar/react": "^6.1.20",
     "@fullcalendar/timegrid": "^6.1.20",
-    "@tailwindcss/postcss": "^4.2.2",
     "flyonui": "^2.4.1",
     "normalize.css": "^8.0.1",
     "react": "^19.2.4",
@@ -24,6 +23,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@tailwindcss/postcss": "^4.2.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
