@@ -11,6 +11,7 @@ import { UpdateActivityReportsLineDto } from './dto/update-activity-reports-line
 import { ActivityReportsLine } from './entities/activity-reports-line.entity';
 import { AccountRole } from '../auth/dto/register-account.dto';
 import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
+import { PastDay } from 'common/enums/past_day';
 
 @Injectable()
 export class ActivityReportsLinesService {
@@ -18,6 +19,31 @@ export class ActivityReportsLinesService {
     @InjectRepository(ActivityReportsLine)
     private readonly activityReportsLineRepository: Repository<ActivityReportsLine>,
   ) {}
+
+  private async validateDailyPastDayLimit(
+    day: number,
+    activity_reports_id: number,
+    past_day: PastDay,
+    excludedLineId?: number,
+  ) {
+    const existingLines = await this.activityReportsLineRepository.find({
+      where: { day, activity_reports_id },
+    });
+
+    const totalPastDay = existingLines.reduce((total, line) => {
+      if (line.id === excludedLineId) {
+        return total;
+      }
+
+      return total + Number(line.past_day);
+    }, 0);
+
+    if (totalPastDay + Number(past_day) > Number(PastDay.FULL)) {
+      throw new BadRequestException(
+        'Total past_day for a single day cannot exceed 1.',
+      );
+    }
+  }
 
   async create(
     createActivityReportsLineDto: CreateActivityReportsLineDto,
@@ -27,22 +53,9 @@ export class ActivityReportsLinesService {
       throw new ForbiddenException('Only providers can fill activity lines.');
     }
 
-    const { day, hours, activity_reports_id } = createActivityReportsLineDto;
+    const { day, past_day, activity_reports_id } = createActivityReportsLineDto;
 
-    // Check if the total hours for this day in this report doesn't exceed 24 (or standard working hours like 8/12)
-    const existingLines = await this.activityReportsLineRepository.find({
-      where: { day, activity_reports_id },
-    });
-
-    const totalHoursDay = existingLines.reduce(
-      (total, line) => total + Number(line.hours),
-      0,
-    );
-    if (totalHoursDay + Number(hours) > 24) {
-      throw new BadRequestException(
-        'Total hours for a single day cannot exceed 24.',
-      );
-    }
+    await this.validateDailyPastDayLimit(day, activity_reports_id, past_day);
 
     const newLine = this.activityReportsLineRepository.create(
       createActivityReportsLineDto,
@@ -84,7 +97,18 @@ export class ActivityReportsLinesService {
       throw new ForbiddenException('Only providers can update activity lines.');
     }
 
-    // We should also re-calculate total hours if hours are updated, keeping it simplified here
+    const nextDay = updateActivityReportsLineDto.day ?? line.day;
+    const nextActivityReportId =
+      updateActivityReportsLineDto.activity_reports_id ?? line.activity_reports_id;
+    const nextPastDay = updateActivityReportsLineDto.past_day ?? line.past_day;
+
+    await this.validateDailyPastDayLimit(
+      nextDay,
+      nextActivityReportId,
+      nextPastDay,
+      line.id,
+    );
+
     Object.assign(line, updateActivityReportsLineDto);
     return this.activityReportsLineRepository.save(line);
   }

@@ -8,6 +8,7 @@ import {
 import type { Relation } from 'typeorm';
 import { Assignment } from '../../assignments/entities/assignment.entity';
 import { ActivityReport } from '../../activity-reports/entities/activity-report.entity';
+import { PastDay } from 'common/enums/past_day';
 
 @Entity('activity_reports_lines')
 export class ActivityReportsLine {
@@ -17,8 +18,10 @@ export class ActivityReportsLine {
   @Column('int')
   day: number;
 
-  @Column('decimal', { precision: 10, scale: 2 })
-  hours: number;
+  @Column('float', {
+    name: 'past_day',
+  })
+  past_day: PastDay;
 
   @Column({ type: 'int', name: 'activity_reports_id' })
   activity_reports_id: number;
