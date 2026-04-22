@@ -99,7 +99,8 @@ export class ActivityReportsLinesService {
 
     const nextDay = updateActivityReportsLineDto.day ?? line.day;
     const nextActivityReportId =
-      updateActivityReportsLineDto.activity_reports_id ?? line.activity_reports_id;
+      updateActivityReportsLineDto.activity_reports_id ??
+      line.activity_reports_id;
     const nextPastDay = updateActivityReportsLineDto.past_day ?? line.past_day;
 
     await this.validateDailyPastDayLimit(
