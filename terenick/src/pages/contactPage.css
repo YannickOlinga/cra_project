@@ -1,0 +1,257 @@
+/* Exact Design from Image */
+.contact-page-exact {
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #ffffff;
+  color: #333333;
+}
+
+/* Header */
+.contact-header-exact {
+  background: #f8f9fa;
+  padding: 60px 0;
+  text-align: center;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.contact-header-exact h1 {
+  font-size: 32px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0;
+}
+
+/* Main Content */
+.contact-main-exact {
+  padding: 80px 0;
+}
+
+.contact-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.contact-grid-exact {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: start;
+}
+
+/* Left Column - Form */
+.contact-left {
+  max-width: 500px;
+}
+
+.contact-form-exact {
+  background: #ffffff;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 40px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.contact-form-exact h2 {
+  font-size: 24px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0 0 30px 0;
+}
+
+.form-group-exact {
+  margin-bottom: 20px;
+}
+
+.form-group-exact input,
+.form-group-exact textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 16px;
+  font-family: inherit;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  background: #ffffff;
+}
+
+.form-group-exact input:focus,
+.form-group-exact textarea:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.form-group-exact textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.submit-btn-exact {
+  background: #007bff;
+  color: #ffffff;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease-in-out;
+  width: 100%;
+}
+
+.submit-btn-exact:hover {
+  background: #0056b3;
+}
+
+/* Right Column - Contact Info */
+.contact-right {
+  max-width: 400px;
+}
+
+.contact-info-exact {
+  background: #ffffff;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 40px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.contact-info-exact h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0 0 30px 0;
+}
+
+.contact-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.contact-item:last-child {
+  margin-bottom: 0;
+}
+
+.contact-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: #f8f9fa;
+  border-radius: 50%;
+  color: #6c757d;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.contact-details h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0 0 4px 0;
+}
+
+.contact-details p {
+  font-size: 14px;
+  color: #6c757d;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+  .contact-grid-exact {
+    grid-template-columns: 1fr;
+    gap: 40px;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  
+  .contact-left,
+  .contact-right {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .contact-header-exact {
+    padding: 40px 20px;
+  }
+  
+  .contact-header-exact h1 {
+    font-size: 28px;
+  }
+  
+  .contact-main-exact {
+    padding: 60px 0;
+  }
+  
+  .contact-container {
+    padding: 0 20px;
+  }
+  
+  .contact-form-exact,
+  .contact-info-exact {
+    padding: 30px 20px;
+  }
+  
+  .contact-form-exact h2 {
+    font-size: 22px;
+  }
+  
+  .contact-info-exact h3 {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .contact-header-exact {
+    padding: 30px 15px;
+  }
+  
+  .contact-header-exact h1 {
+    font-size: 24px;
+  }
+  
+  .contact-main-exact {
+    padding: 40px 0;
+  }
+  
+  .contact-container {
+    padding: 0 15px;
+  }
+  
+  .contact-form-exact,
+  .contact-info-exact {
+    padding: 25px 15px;
+  }
+  
+  .contact-form-exact h2 {
+    font-size: 20px;
+  }
+  
+  .contact-info-exact h3 {
+    font-size: 16px;
+  }
+  
+  .contact-item {
+    gap: 12px;
+  }
+  
+  .contact-icon {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .contact-details h4 {
+    font-size: 14px;
+  }
+  
+  .contact-details p {
+    font-size: 13px;
+  }
+}

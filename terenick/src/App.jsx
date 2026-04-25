@@ -11,6 +11,9 @@ import Taches from './pages/taches';
 import NotesFrais from './pages/notesFrais';
 import Reporting from './pages/reporting';
 
+import AboutPage from './pages/aboutPage';
+import ModernContact from './pages/modernContactPage';
+import ContactPage from './pages/contactPage';
 export default function App(){
 return (
 <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
@@ -26,6 +29,10 @@ return (
 <Route path="/taches" element={<Taches />} />
 <Route path="/notes-frais" element={<NotesFrais />} />
 <Route path="/reporting" element={<Reporting />} />
+<Route path="/about" element={<ModernContact />} />
+<Route path="/contact" element={<ContactPage />} />
+<Route path="/moderncontact" element={<ModernContact />} />
+<Route path="/moderation-contact" element={<ModernContact />} />
 
 </Routes>
 </Router>
