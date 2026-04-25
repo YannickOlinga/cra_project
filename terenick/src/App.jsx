@@ -5,6 +5,9 @@ import Login from './pages/login';
 import CompteRendu from './pages/compteRendu';
 import LoginProvider from './pages/login_provider';
 import SignupProvider from './pages/signup_provider';
+import AboutPage from './pages/aboutPage';
+import ModernContact from './pages/modernContactPage';
+import ContactPage from './pages/contactPage';
 export default function App(){
 return (
 <Router>
@@ -15,6 +18,10 @@ return (
 <Route path="/login_provider" element={<LoginProvider />} />
 <Route path="/signup_provider" element={<SignupProvider />} />
 <Route path="/compte-rendu" element={<CompteRendu />} />
+<Route path="/about" element={<ModernContact />} />
+<Route path="/contact" element={<ContactPage />} />
+<Route path="/moderncontact" element={<ModernContact />} />
+<Route path="/moderation-contact" element={<ModernContact />} />
 
 </Routes>
 </Router>

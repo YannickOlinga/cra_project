@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import './navbar.css';
 
 export default function Navbar() {
@@ -31,8 +32,8 @@ export default function Navbar() {
         {/* Menu Desktop */}
         <ul className="desktop-menu">
             <li><a href="#home" onClick={closeMobileMenu}>Home</a></li>
-            <li><a href="#about" onClick={closeMobileMenu}>A Propos</a></li>
-            <li><a href="#contact" onClick={closeMobileMenu}>Contact</a></li>
+            <li><Link to="/moderncontact" onClick={closeMobileMenu}>A Propos</Link></li>
+            <li><Link to="/moderation-contact" onClick={closeMobileMenu}>Contact</Link></li>
             <li><a href="/compte-rendu" onClick={closeMobileMenu}>Compte Rendu</a></li>
         </ul>
 
@@ -54,8 +55,8 @@ export default function Navbar() {
         <div className={`mobile-menu ${mobileMenuOpen ? 'open' : ''}`}>
             <ul>
                 <li><a href="#home" onClick={closeMobileMenu}>Home</a></li>
-                <li><a href="#about" onClick={closeMobileMenu}>A Propos</a></li>
-                <li><a href="#contact" onClick={closeMobileMenu}>Contact</a></li>
+                <li><Link to="/moderncontact" onClick={closeMobileMenu}>A Propos</Link></li>
+                <li><Link to="/contact" onClick={closeMobileMenu}>Contact</Link></li>
                 <li><a href="/compte-rendu" onClick={closeMobileMenu}>Compte Rendu</a></li>
                 <li className="mobile-button">
                     <a href="/login" onClick={closeMobileMenu}>
