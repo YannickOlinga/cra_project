@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import './profile.css';
+import Footer from '../components/Footer';
 
 function Profile() {
   const apiBaseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
@@ -178,6 +179,7 @@ function Profile() {
             {isSubmitting ? 'Enregistrement...' : 'Enregistrer les modifications'}
           </button>
         </form>
+        <Footer className="profile-footer" variant="compact" />
       </section>
     </div>
   );
