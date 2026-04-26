@@ -3,6 +3,9 @@ import Home from './pages/home';
 import Sidebar from './components/sidebar';
 import Login from './pages/login';
 import CompteRendu from './pages/compteRendu';
+import CompteRenduDetail from './pages/compteRenduDetail';
+import Missions from './pages/missions';
+import Clients from './pages/clients';
 import LoginProvider from './pages/login_provider';
 import SignupProvider from './pages/signup_provider';
 import Missions from './pages/missions';
@@ -47,6 +50,9 @@ return (
 <Route path="/moderation-contact" element={<ModernContact />} />
 <Route path="/register_forget_password" element={<RegisterForgetPassword />} />
 <Route path="/compte-rendu" element={<RequireAuth><CompteRendu /></RequireAuth>} />
+<Route path="/compte-rendu/:id" element={<RequireAuth><CompteRenduDetail /></RequireAuth>} />
+<Route path="/missions" element={<RequireAuth><Missions /></RequireAuth>} />
+<Route path="/clients" element={<RequireAuth><Clients /></RequireAuth>} />
 <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
 <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
 

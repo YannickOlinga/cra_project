@@ -7,6 +7,7 @@ import {
 import { JoinColumn } from 'typeorm';
 import type { Relation } from 'typeorm';
 import { Provider } from '../../providers/entities/provider.entity';
+import { Assignment } from '../../assignments/entities/assignment.entity';
 
 @Entity('activity_reports')
 export class ActivityReport {
@@ -22,7 +23,14 @@ export class ActivityReport {
   @Column({ type: 'int', name: 'providers_id' })
   providers_id: number;
 
+  @Column({ type: 'int', name: 'assignments_id' })
+  assignments_id: number;
+
   @ManyToOne(() => Provider, { onDelete: 'CASCADE', onUpdate: 'CASCADE' })
   @JoinColumn({ name: 'providers_id' })
   provider: Relation<Provider>;
+
+  @ManyToOne(() => Assignment, { onDelete: 'CASCADE', onUpdate: 'CASCADE' })
+  @JoinColumn({ name: 'assignments_id' })
+  assignment: Relation<Assignment>;
 }

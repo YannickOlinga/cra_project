@@ -49,9 +49,13 @@ function login() {
 
       navigate('/compte-rendu');
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : 'Une erreur est survenue.',
-      );
+      const message =
+        error instanceof TypeError
+          ? "Impossible de joindre l'API. Vérifie que le backend tourne et que l'URL API est correcte."
+          : error instanceof Error
+            ? error.message
+            : 'Une erreur est survenue.';
+      setErrorMessage(message);
     } finally {
       setIsSubmitting(false);
     }

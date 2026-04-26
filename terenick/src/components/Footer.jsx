@@ -1,9 +1,21 @@
 import React from 'react'
 import './Footer.css'
 
-function Footer() {
+function Footer({ className = '', variant = 'default' }) {
+  if (variant === 'compact') {
+    return (
+      <footer className={`footer footer-compact ${className}`.trim()}>
+        <div className="footer-compact-content">
+          <p className="footer-compact-copy">
+            &copy; 2026 Terenick. Tous droits réservés.
+          </p>
+        </div>
+      </footer>
+    )
+  }
+
   return (
-    <footer className="footer">
+    <footer className={`footer ${className}`.trim()}>
       <div className="footer-content">
         <div className="footer-section">
           <h3>À propos</h3>
