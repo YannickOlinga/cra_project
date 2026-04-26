@@ -4,8 +4,6 @@ import Sidebar from './components/sidebar';
 import Login from './pages/login';
 import CompteRendu from './pages/compteRendu';
 import CompteRenduDetail from './pages/compteRenduDetail';
-import Missions from './pages/missions';
-import Clients from './pages/clients';
 import LoginProvider from './pages/login_provider';
 import SignupProvider from './pages/signup_provider';
 import AboutPage from './pages/aboutPage';

@@ -76,7 +76,6 @@ export default function Navbar() {
             <li><a href="#home" onClick={closeMobileMenu}>Home</a></li>
             <li><Link to="/moderncontact" onClick={closeMobileMenu}>A Propos</Link></li>
             <li><Link to="/moderation-contact" onClick={closeMobileMenu}>Contact</Link></li>
-            <li><a href="/compte-rendu" onClick={closeMobileMenu}>Compte Rendu</a></li>
             <li><a href="/compte-rendu" onClick={(event) => handleProtectedNavigation(event, '/compte-rendu')}>Compte Rendu</a></li>
         </ul>
 
