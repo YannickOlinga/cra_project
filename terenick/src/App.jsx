@@ -8,8 +8,6 @@ import Missions from './pages/missions';
 import Clients from './pages/clients';
 import LoginProvider from './pages/login_provider';
 import SignupProvider from './pages/signup_provider';
-import Missions from './pages/missions';
-import Clients from './pages/clients';
 import Taches from './pages/taches';
 import NotesFrais from './pages/notesFrais';
 import Reporting from './pages/reporting';
