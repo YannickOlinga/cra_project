@@ -1,4 +1,13 @@
-import { IsInt, IsNotEmpty, IsNumber, Max, Min } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import {
+  IsDefined,
+  IsInt,
+  IsNotEmpty,
+  Max,
+  Min,
+  IsEnum,
+} from 'class-validator';
+import { PastDay } from 'common/enums/past_day';
 
 export class CreateActivityReportsLineDto {
   @IsNotEmpty()
@@ -7,11 +16,10 @@ export class CreateActivityReportsLineDto {
   @Max(31)
   day: number;
 
-  @IsNotEmpty()
-  @IsNumber()
-  @Min(0.5)
-  @Max(24)
-  hours: number;
+  @IsEnum(PastDay)
+  @IsDefined()
+  @ApiProperty({ enum: PastDay, enumName: 'past_day' })
+  past_day: PastDay;
 
   @IsNotEmpty()
   @IsInt()

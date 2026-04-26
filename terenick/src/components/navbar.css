@@ -83,6 +83,60 @@ nav button:hover {
     color: rgb(0, 0, 0);
 }
 
+.user-badge {
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    background: #3f5368;
+    color: white;
+    font-size: 1rem;
+    font-weight: 700;
+    border: 2px solid rgba(255, 255, 255, 0.6);
+}
+
+.user-badge-link {
+    text-decoration: none;
+}
+
+.user-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.logout-button {
+    padding: 0.55rem 1rem;
+    background: transparent;
+    color: rgb(255, 255, 255);
+    border: 2px solid rgb(255, 255, 255);
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.logout-button:hover {
+    background: rgb(255, 255, 255);
+    color: rgb(0, 0, 0);
+}
+
+.mobile-user-badge {
+    margin-top: 1rem;
+}
+
+.mobile-user-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.mobile-logout-button {
+    border-radius: 12px;
+}
+
 /* Menu Hamburger Mobile */
 .mobile-menu-toggle {
     display: none;
@@ -292,6 +346,22 @@ nav.scrolled button {
     background-color: transparent;
     border: 2px solid rgba(0, 0, 0, 0.8);
     color: rgb(0, 0, 0);
+}
+
+nav.scrolled .user-badge {
+    border-color: rgba(0, 0, 0, 0.15);
+    color: white;
+}
+
+nav.scrolled .logout-button {
+    background-color: transparent;
+    border: 2px solid rgba(0, 0, 0, 0.8);
+    color: rgb(0, 0, 0);
+}
+
+nav.scrolled .logout-button:hover {
+    background-color: rgb(0, 0, 0);
+    color: #ffffff;
 }
 
 nav.scrolled button:hover {
