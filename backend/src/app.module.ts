@@ -29,7 +29,7 @@ import { ActivityReportsLinesModule } from './activity-reports-lines/activity-re
       host: process.env.DATABASE_HOST ?? 'localhost',
       port: Number(process.env.DATABASE_PORT ?? 5433),
       username: process.env.DATABASE_USER ?? 'TerenickDB',
-      password: process.env.DATABASE_PASSWORD ?? 'TerenierT*',
+      password: process.env.DATABASE_PASSWORD,
       database: process.env.DATABASE_NAME ?? 'TerenickDB',
       entities: [
         User,
