@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ForbiddenException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -11,12 +12,15 @@ import { UpdateActivityReportDto } from './dto/update-activity-report.dto';
 import { ActivityReport } from './entities/activity-report.entity';
 import { AccountRole } from '../auth/dto/register-account.dto';
 import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
+import { Assignment } from '../assignments/entities/assignment.entity';
 
 @Injectable()
 export class ActivityReportsService {
   constructor(
     @InjectRepository(ActivityReport)
     private readonly activityReportsRepository: Repository<ActivityReport>,
+    @InjectRepository(Assignment)
+    private readonly assignmentsRepository: Repository<Assignment>,
   ) {}
 
   async create(
@@ -29,18 +33,33 @@ export class ActivityReportsService {
       );
     }
 
-    // Checking if a report for this month/year already exists for this provider
+    const assignment = await this.assignmentsRepository.findOne({
+      where: { id: createActivityReportDto.assignments_id },
+    });
+
+    if (!assignment) {
+      throw new NotFoundException('Assignment not found.');
+    }
+
+    if (assignment.providers_id !== authUser.profileId) {
+      throw new BadRequestException(
+        'You can only create an activity report for your own assignments.',
+      );
+    }
+
+    // One provider can only have one report per assignment and month/year.
     const existingReport = await this.activityReportsRepository.findOne({
       where: {
         month: createActivityReportDto.month,
         year: createActivityReportDto.year,
         providers_id: authUser.profileId,
+        assignments_id: createActivityReportDto.assignments_id,
       },
     });
 
     if (existingReport) {
       throw new ConflictException(
-        'An activity report already exists for this month and year.',
+        'An activity report already exists for this assignment, month and year.',
       );
     }
 
@@ -61,14 +80,14 @@ export class ActivityReportsService {
 
     return this.activityReportsRepository.find({
       where: whereCondition,
-      relations: ['provider'], // ou ajouter les lignes de CRA si besoin
+      relations: ['provider', 'assignment'],
     });
   }
 
   async findOne(id: number, authUser: AuthenticatedUser) {
     const report = await this.activityReportsRepository.findOne({
       where: { id },
-      relations: ['provider'],
+      relations: ['provider', 'assignment'],
     });
 
     if (!report) {

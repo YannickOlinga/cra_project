@@ -91,6 +91,8 @@ export class AuthService {
       }
 
       const customer = await this.customersService.create({
+        name: `${user.first_name} ${user.last_name}`.trim(),
+        email: user.email,
         company: registerAccountDto.company,
         user_id: user.id,
       });

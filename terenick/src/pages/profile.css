@@ -108,6 +108,15 @@
     cursor: pointer;
 }
 
+.profile-footer {
+    width: 100%;
+    margin-top: 3rem;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 16px 40px rgba(25, 39, 52, 0.08);
+    box-sizing: border-box;
+}
+
 @media (max-width: 900px) {
     .profile-grid {
         grid-template-columns: 1fr;

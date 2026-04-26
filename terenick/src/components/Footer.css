@@ -74,6 +74,27 @@
   color: #7f8c8d;
 }
 
+.footer-compact {
+  padding: 1rem 1.5rem;
+  background: linear-gradient(180deg, #33485d 0%, #2f4255 100%);
+  color: #dfe7ee;
+}
+
+.footer-compact-content {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.footer-compact-copy {
+  margin: 0;
+  color: #dfe7ee;
+  font-size: 0.95rem;
+  text-align: center;
+  font-weight: 600;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
   .footer-content {
@@ -83,5 +104,9 @@
   
   .social-links {
     justify-content: center;
+  }
+
+  .footer-compact {
+    padding: 0.9rem 1rem;
   }
 }
