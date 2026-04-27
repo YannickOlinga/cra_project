@@ -7,8 +7,11 @@ export class Customer {
   @PrimaryGeneratedColumn('increment')
   id!: number;
 
-  @Column('varchar', { length: 100 })
-  company!: string;
+  @Column('varchar', { length: 100, nullable: true })
+  company?: string;
+
+  @Column('varchar', { length: 100, nullable: true, unique: true })
+  identifier?: string;
 
   @OneToOne(() => User, { eager: true, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'users_id' })

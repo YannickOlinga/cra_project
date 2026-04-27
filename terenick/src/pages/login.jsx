@@ -5,7 +5,7 @@ import './login.css';
 
 const apiBaseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
-function login() {
+function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -24,35 +24,30 @@ function login() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: email.trim(),
+          email,
           password,
         }),
       });
 
-      const data = await response.json().catch(() => null);
+      const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        const message = Array.isArray(data?.message)
-          ? data.message.join(', ')
-          : data?.message ?? 'Connexion impossible.';
-        throw new Error(message);
+        throw new Error(data.message ?? 'Identifiants invalides.');
       }
 
       localStorage.setItem(
         'authSession',
         JSON.stringify({
-          token: data?.access_token ?? '',
-          user: data?.user ?? null,
-          role: data?.role ?? null,
-          profile: data?.profile ?? null,
+          token: data.access_token,
+          user: data.user,
+          role: data.role,
+          profile: data.profile,
         }),
       );
 
-      navigate('/compte-rendu');
+      navigate('/dashboard');
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : 'Une erreur est survenue.',
-      );
+      setErrorMessage(error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -102,7 +97,7 @@ function login() {
         </section>
       </div>
     </>
-  )
+  );
 }
  
-export default login
+export default Login;

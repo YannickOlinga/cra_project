@@ -11,4 +11,8 @@ export class CreateActivityReportDto {
   @IsInt()
   @Min(2000)
   year: number;
+
+  @IsNotEmpty()
+  @IsInt()
+  assignments_id: number;
 }

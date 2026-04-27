@@ -3,17 +3,27 @@ import {
   BadRequestException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import { JwtService, type JwtSignOptions } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
 import { CustomersService } from '../customers/customers.service';
 import { ProvidersService } from '../providers/providers.service';
+import { MailService } from '../mail/mail.service';
 import { AccountRole, RegisterAccountDto } from './dto/register-account.dto';
 import { LoginDto } from './dto/login.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { AuthenticatedUser } from './interfaces/authenticated-user.interface';
 
 import { Customer } from '../customers/entities/customer.entity';
 import { Provider } from '../providers/entities/provider.entity';
+
+type ResetPasswordPayload = {
+  sub: number;
+  email: string;
+  purpose: 'reset-password';
+};
 
 @Injectable()
 export class AuthService {
@@ -22,6 +32,8 @@ export class AuthService {
     private readonly customersService: CustomersService,
     private readonly providersService: ProvidersService,
     private readonly jwtService: JwtService,
+    private readonly mailService: MailService,
+    private readonly configService: ConfigService,
   ) {}
 
   async signIn(loginDto: LoginDto) {
@@ -91,6 +103,8 @@ export class AuthService {
       }
 
       const customer = await this.customersService.create({
+        name: `${user.first_name} ${user.last_name}`.trim(),
+        email: user.email,
         company: registerAccountDto.company,
         user_id: user.id,
       });
@@ -110,6 +124,61 @@ export class AuthService {
       role: AccountRole.Provider,
       user,
       provider,
+    };
+  }
+
+  async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
+    const email = forgotPasswordDto.email.trim();
+    const user = await this.usersService.findByEmail(email);
+
+    if (user) {
+      const expiresIn = (this.configService.get<string>(
+        'RESET_PASSWORD_TOKEN_EXPIRES_IN',
+      ) ?? '1h') as JwtSignOptions['expiresIn'];
+      const token = await this.jwtService.signAsync(
+        {
+          sub: user.id,
+          email: user.email,
+          purpose: 'reset-password',
+        } satisfies ResetPasswordPayload,
+        { expiresIn },
+      );
+
+      await this.mailService.sendResetPasswordEmail(
+        user.email,
+        user.first_name,
+        token,
+      );
+    }
+
+    return {
+      message:
+        'Si un compte existe avec cet email, un lien de reinitialisation a ete envoye.',
+    };
+  }
+
+  async resetPassword(resetPasswordDto: ResetPasswordDto) {
+    let payload: ResetPasswordPayload;
+
+    try {
+      payload = await this.jwtService.verifyAsync<ResetPasswordPayload>(
+        resetPasswordDto.token,
+      );
+    } catch {
+      throw new BadRequestException('Token de reinitialisation invalide');
+    }
+
+    if (payload.purpose !== 'reset-password') {
+      throw new BadRequestException('Token de reinitialisation invalide');
+    }
+
+    await this.usersService.updatePassword(
+      payload.sub,
+      resetPasswordDto.password,
+    );
+
+    return {
+      message: 'Mot de passe modifie avec succes',
     };
   }
 }

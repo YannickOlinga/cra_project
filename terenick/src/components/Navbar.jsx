@@ -73,10 +73,9 @@ export default function Navbar() {
         
         {/* Menu Desktop */}
         <ul className="desktop-menu">
-            <li><a href="#home" onClick={closeMobileMenu}>Home</a></li>
-            <li><Link to="/moderncontact" onClick={closeMobileMenu}>A Propos</Link></li>
+            <li><Link to="/" onClick={closeMobileMenu}>Home</Link></li>
+            <li><Link to="/about" onClick={closeMobileMenu}>A Propos</Link></li>
             <li><Link to="/moderation-contact" onClick={closeMobileMenu}>Contact</Link></li>
-            <li><a href="/compte-rendu" onClick={closeMobileMenu}>Compte Rendu</a></li>
             <li><a href="/compte-rendu" onClick={(event) => handleProtectedNavigation(event, '/compte-rendu')}>Compte Rendu</a></li>
         </ul>
 
@@ -110,10 +109,9 @@ export default function Navbar() {
         {/* Menu Mobile */}
         <div className={`mobile-menu ${mobileMenuOpen ? 'open' : ''}`}>
             <ul>
-                <li><a href="#home" onClick={closeMobileMenu}>Home</a></li>
-                <li><Link to="/moderncontact" onClick={closeMobileMenu}>A Propos</Link></li>
+                <li><Link to="/" onClick={closeMobileMenu}>Home</Link></li>
+                <li><Link to="/about" onClick={closeMobileMenu}>A Propos</Link></li>
                 <li><Link to="/contact" onClick={closeMobileMenu}>Contact</Link></li>
-                <li><a href="#about" onClick={closeMobileMenu}>A Propos</a></li>
                 <li><a href="/compte-rendu" onClick={(event) => handleProtectedNavigation(event, '/compte-rendu')}>Compte Rendu</a></li>
                 <li className="mobile-button">
                     {session ? (
