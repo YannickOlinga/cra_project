@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import './compteRendu.css';
 import AddCRAModal from '../components/AddCRAModal';
+import { exportRowsToCsv } from '../utils/csvExport';
 
 const apiBaseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
@@ -175,6 +176,26 @@ export default function CompteRendu() {
     }
   }
 
+  function handleExportCsv() {
+    exportRowsToCsv(
+      'comptes-rendus.csv',
+      [
+        { key: 'periode', label: 'Période' },
+        { key: 'mission', label: 'Mission' },
+        { key: 'prestataire', label: 'Prestataire' },
+        { key: 'tempsTotal', label: 'Temps total' },
+        { key: 'etat', label: 'État' },
+      ],
+      activities.map((activity) => ({
+        periode: activity.periode,
+        mission: activity.mission,
+        prestataire: activity.prestataire,
+        tempsTotal: activity.tempsTotal,
+        etat: activity.etat,
+      })),
+    );
+  }
+
   const handleCreateReport = ({ report, assignment }) => {
     const missionLabel =
       report?.assignment?.label ||
@@ -312,7 +333,9 @@ export default function CompteRendu() {
 
         <div className="cr-table-controls">
           <div className="cr-table-controls-right cr-table-controls-right-only">
-            <button className="cr-btn cr-btn-outline">Exporter (.csv)</button>
+            <button className="cr-btn cr-btn-outline" onClick={handleExportCsv}>
+              Exporter (.csv)
+            </button>
             <div className="cr-view-toggle">
               <button className="cr-view-btn active" aria-label="Vue tableau"></button>
               <button className="cr-view-btn" aria-label="Vue liste"></button>

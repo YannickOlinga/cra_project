@@ -3,6 +3,7 @@ import './compteRendu.css';
 import './clients.css';
 import AddCustomerModal from '../components/AddCustomerModal';
 import DeleteCustomerModal from '../components/DeleteCustomerModal';
+import { exportRowsToCsv } from '../utils/csvExport';
 
 const apiBaseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
@@ -99,6 +100,24 @@ export default function Clients() {
   function handleLogout() {
     localStorage.removeItem('authSession');
     window.location.href = '/login';
+  }
+
+  function handleExportCsv() {
+    exportRowsToCsv(
+      'clients.csv',
+      [
+        { key: 'nom', label: 'Nom' },
+        { key: 'email', label: 'Email' },
+        { key: 'entreprise', label: 'Entreprise' },
+      ],
+      clients.map((client) => ({
+        nom:
+          `${client.user?.first_name ?? ''} ${client.user?.last_name ?? ''}`.trim() ||
+          `Client #${client.id}`,
+        email: client.user?.email ?? '-',
+        entreprise: client.company || '-',
+      })),
+    );
   }
 
   return (
@@ -210,7 +229,7 @@ export default function Clients() {
         <section className="clients-board">
           <div className="clients-toolbar">
             <div />
-            <button type="button" className="clients-toolbar-btn">
+            <button type="button" className="clients-toolbar-btn" onClick={handleExportCsv}>
               Exporter (.csv)
             </button>
           </div>

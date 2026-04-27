@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './compteRendu.css';
+import { exportRowsToCsv } from '../utils/csvExport';
 
 export default function Reporting() {
   const [periode, setPeriode] = useState('mois');
@@ -52,26 +53,25 @@ export default function Reporting() {
   });
 
   const exportData = () => {
-    const data = filteredRapports.map(rapport => ({
-      'Titre': rapport.titre,
-      'Période': rapport.periode,
-      'Statut': rapport.statut,
-      'Nombre de CRAs': rapport.caCount,
-      'Montant total': `${rapport.montantTotal.toFixed(2)}€`,
-      'Date de génération': rapport.dateGeneration
-    }));
-    
-    const csv = [
-      Object.keys(data[0]).join(','),
-      ...data.map(row => Object.values(row).join(','))
-    ].join('\n');
-    
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `rapports_${periode}_${annee}.csv`;
-    link.click();
+    exportRowsToCsv(
+      `rapports_${periode}_${annee}.csv`,
+      [
+        { key: 'titre', label: 'Titre' },
+        { key: 'periode', label: 'Période' },
+        { key: 'statut', label: 'Statut' },
+        { key: 'caCount', label: 'Nombre de CRAs' },
+        { key: 'montantTotal', label: 'Montant total' },
+        { key: 'dateGeneration', label: 'Date de génération' },
+      ],
+      filteredRapports.map((rapport) => ({
+        titre: rapport.titre,
+        periode: rapport.periode,
+        statut: rapport.statut,
+        caCount: rapport.caCount,
+        montantTotal: `${rapport.montantTotal.toFixed(2)}€`,
+        dateGeneration: rapport.dateGeneration,
+      })),
+    );
   };
 
   return (
