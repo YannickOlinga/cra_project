@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './provider.css';
-
+import Navbar from '../components/Navbar';
 const apiBaseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 function SignupProvider() {
   const navigate = useNavigate();
@@ -91,6 +91,7 @@ function SignupProvider() {
 
   return (
     <>
+      <Navbar />
       <div className="signup-layout">
         <section className="signup-form-panel">
           <form className="signup-form" onSubmit={handleSubmit}>

@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
 import './modernContactPage.css'
 import Navbar from '../components/Navbar'
+import Footer from '../components/Footer'
+
 function ModernContactPage() {
   const [formData, setFormData] = useState({
     name: '',
@@ -342,47 +344,7 @@ function ModernContactPage() {
           </section>
         </div>
       </main>
-
-      {/* Footer */}
-      <footer className="contact-footer">
-        <div className="container">
-          <div className="footer-content">
-            <div className="footer-brand">
-              <h3>Terenick</h3>
-              <p>La solution moderne pour la gestion de vos comptes rendus d'activité</p>
-            </div>
-            <div className="footer-links">
-              <div className="footer-column">
-                <h4>Produit</h4>
-                <ul>
-                  <li><a href="/features">Fonctionnalités</a></li>
-                  <li><a href="/pricing">Tarifs</a></li>
-                  <li><a href="/demo">Démonstration</a></li>
-                </ul>
-              </div>
-              <div className="footer-column">
-                <h4>Entreprise</h4>
-                <ul>
-                  <li><a href="/about">À propos</a></li>
-                  <li><a href="/contact">Contact</a></li>
-                  <li><a href="/blog">Blog</a></li>
-                </ul>
-              </div>
-              <div className="footer-column">
-                <h4>Légal</h4>
-                <ul>
-                  <li><a href="/privacy">Confidentialité</a></li>
-                  <li><a href="/terms">Conditions</a></li>
-                  <li><a href="/cookies">Cookies</a></li>
-                </ul>
-              </div>
-            </div>
-          </div>
-          <div className="footer-bottom">
-            <p>&copy; 2024 Terenick. Tous droits réservés.</p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
     </>
   )

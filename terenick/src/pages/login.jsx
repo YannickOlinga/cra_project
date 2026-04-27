@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Navbar from '../components/Navbar';
 import './login.css';
 
 const apiBaseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
@@ -54,6 +55,7 @@ function Login() {
 
   return (
     <>
+    <Navbar />
       <div className="login-layout">
         <section className="login-form-panel">
           <form className="login-form" onSubmit={handleSubmit}>
