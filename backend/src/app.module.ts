@@ -18,6 +18,7 @@ import { AssignmentsModule } from './assignments/assignments.module';
 import { ActivityReportsModule } from './activity-reports/activity-reports.module';
 import { ActivityReportsCostsModule } from './activity-reports-costs/activity-reports-costs.module';
 import { ActivityReportsLinesModule } from './activity-reports-lines/activity-reports-lines.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { ActivityReportsLinesModule } from './activity-reports-lines/activity-re
     ActivityReportsModule,
     ActivityReportsCostsModule,
     ActivityReportsLinesModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

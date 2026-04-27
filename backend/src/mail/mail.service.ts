@@ -4,6 +4,7 @@ import { existsSync } from 'fs';
 import { createTransport, type Transporter } from 'nodemailer';
 import * as Mail from 'nodemailer/lib/mailer';
 import { join } from 'path';
+import { ContactMessageDto } from './dto/contact-message.dto';
 
 @Injectable()
 export class MailService {
@@ -83,6 +84,73 @@ export class MailService {
                       <p style="margin:0;font-size:16px;line-height:1.6;">
                         L'equipe Terenick
                       </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </div>
+      `,
+    });
+  }
+
+  async sendContactMessage(contactMessage: ContactMessageDto) {
+    const appName = this.configService.get<string>('APP_NAME') ?? 'Terenick';
+    const contactRecipient =
+      this.configService.get<string>('CONTACT_EMAIL_TO') ??
+      this.configService.get<string>('EMAIL_FROM') ??
+      this.configService.get<string>('EMAIL_USER') ??
+      'contact@terenick.com';
+    const from =
+      this.configService.get<string>('EMAIL_FROM') ??
+      this.configService.get<string>('EMAIL_USER');
+
+    const name = contactMessage.name.trim();
+    const email = contactMessage.email.trim();
+    const subject = contactMessage.subject.trim();
+    const message = contactMessage.message.trim();
+
+    const escapedName = this.escapeHtml(name);
+    const escapedEmail = this.escapeHtml(email);
+    const escapedSubject = this.escapeHtml(subject);
+    const escapedMessage = this.escapeHtml(message).replace(/\n/g, '<br>');
+
+    return this.sendMail({
+      to: contactRecipient,
+      from,
+      replyTo: email,
+      subject: `[${appName}] Nouveau message contact - ${subject}`,
+      text: [
+        'Nouveau message depuis le formulaire de contact.',
+        '',
+        `Nom: ${name}`,
+        `Email: ${email}`,
+        `Sujet: ${subject}`,
+        '',
+        'Message:',
+        message,
+      ].join('\n'),
+      html: `
+        <div style="margin:0;padding:0;background:#f4f6f8;font-family:Arial,Helvetica,sans-serif;color:#28323c;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background:#f4f6f8;">
+            <tr>
+              <td align="center" style="padding:32px 16px;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;border-collapse:collapse;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 12px 32px rgba(31,42,55,0.12);">
+                  <tr>
+                    <td style="padding:28px 32px;background:#2c3e50;color:#ffffff;">
+                      <p style="margin:0 0 8px;font-size:13px;letter-spacing:1px;text-transform:uppercase;color:#dbe8f4;">Formulaire de contact</p>
+                      <h1 style="margin:0;font-size:28px;line-height:1.2;font-weight:700;">Nouveau message recu</h1>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:32px;">
+                      <p style="margin:0 0 10px;font-size:15px;line-height:1.6;"><strong>Nom :</strong> ${escapedName}</p>
+                      <p style="margin:0 0 10px;font-size:15px;line-height:1.6;"><strong>Email :</strong> <a href="mailto:${escapedEmail}" style="color:#2c3e50;">${escapedEmail}</a></p>
+                      <p style="margin:0 0 22px;font-size:15px;line-height:1.6;"><strong>Sujet :</strong> ${escapedSubject}</p>
+                      <div style="padding:18px 20px;background:#f6f8fb;border:1px solid #e5ebf2;border-radius:12px;font-size:16px;line-height:1.7;">
+                        ${escapedMessage}
+                      </div>
                     </td>
                   </tr>
                 </table>

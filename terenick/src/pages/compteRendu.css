@@ -1,6 +1,6 @@
 .compte-rendu-container.cr-layout {
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr);
+  grid-template-columns: 180px minmax(0, 1fr);
   min-height: 100vh;
   background: #f6f8fb;
 }
@@ -11,8 +11,8 @@
   left: 0;
   display: flex;
   flex-direction: column;
-  width: 280px;
-  min-width: 280px;
+  width: 180px;
+  min-width: 180px;
   min-height: 100vh;
   align-self: start;
   background: #ffffff;
@@ -22,7 +22,7 @@
 }
 
 .cr-sidebar-header {
-  padding: 2rem 2rem 1.5rem;
+  padding: 1.7rem 1.25rem 1.35rem;
 }
 
 .cr-logo {
@@ -30,7 +30,7 @@
 }
 
 .cr-logo-text {
-  color: #17824b;
+  color: #2c3e50;
   font-size: 1.75rem;
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -52,7 +52,7 @@
   flex: 1;
   flex-direction: column;
   gap: 2rem;
-  padding: 0 1.25rem 1.5rem;
+  padding: 0 0.85rem 1.35rem;
   background: transparent !important;
 }
 
@@ -63,7 +63,7 @@
 .cr-nav-title {
   margin: 0 0 0.85rem;
   padding: 0 0.75rem;
-  color: #17824b;
+  color: #2c3e50;
   font-size: 0.8rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -87,7 +87,7 @@
   padding: 0.85rem 0.75rem;
   border-left: 3px solid transparent;
   border-radius: 10px;
-  color: #1d7d49;
+  color: #2c3e50;
   text-decoration: none;
   transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
@@ -103,13 +103,14 @@
 }
 
 .cr-nav-link:hover {
-  background: #eef8f1;
+  background: #eef2f6;
+  color: #1f2d3a;
 }
 
 .cr-nav-item.active .cr-nav-link {
-  border-left-color: #2bb765;
-  background: #eef8f1;
-  color: #0f5f33;
+  border-left-color: #2c3e50;
+  background: #e9eef3;
+  color: #1f2d3a;
   font-weight: 700;
 }
 
@@ -123,7 +124,7 @@
 }
 
 .cr-sidebar-footer {
-  padding: 1.25rem 2rem 2rem;
+  padding: 1.1rem 1.25rem 1.5rem;
   border-top: 1px solid #eef2f6;
 }
 
@@ -184,7 +185,7 @@
   width: 54px;
   height: 54px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #31bf68, #17824b);
+  background: linear-gradient(135deg, #3d5368, #2c3e50);
   color: #fff;
   font-weight: 800;
 }
@@ -224,9 +225,9 @@
 }
 
 .cr-btn-primary {
-  background: linear-gradient(135deg, #31bf68, #17824b);
+  background: linear-gradient(135deg, #3d5368, #2c3e50);
   color: #fff;
-  box-shadow: 0 10px 24px rgba(23, 130, 75, 0.18);
+  box-shadow: 0 10px 24px rgba(44, 62, 80, 0.18);
 }
 
 .cr-btn-secondary,
@@ -261,8 +262,8 @@
 }
 
 .cr-tab.active {
-  border-bottom-color: #2bb765;
-  color: #2bb765;
+  border-bottom-color: #2c3e50;
+  color: #2c3e50;
 }
 
 .cr-tab-count {
@@ -278,7 +279,7 @@
 }
 
 .cr-tab.active .cr-tab-count {
-  background: #2bb765;
+  background: #2c3e50;
   color: #fff;
 }
 
@@ -317,7 +318,7 @@
 }
 
 .cr-view-btn.active {
-  background: #2bb765;
+  background: #2c3e50;
 }
 
 .cr-table-container {
@@ -362,7 +363,7 @@
 }
 
 .cr-report-link:hover {
-  color: #17824b;
+  color: #2c3e50;
 }
 
 .cr-status {
@@ -494,7 +495,12 @@
 
 @media (max-width: 1024px) {
   .compte-rendu-container.cr-layout {
-    grid-template-columns: 240px minmax(0, 1fr);
+    grid-template-columns: 180px minmax(0, 1fr);
+  }
+
+  .cr-sidebar {
+    width: 180px;
+    min-width: 180px;
   }
 
   .cr-main-content {

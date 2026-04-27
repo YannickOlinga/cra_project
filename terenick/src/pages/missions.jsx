@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import './missions.css';
 import './compteRendu.css';
 import AddAssignmentModal from '../components/AddAssignmentModal';
@@ -106,9 +107,9 @@ export default function Missions() {
     <div className="compte-rendu-container cr-layout">
       <aside className="cr-sidebar">
         <div className="cr-sidebar-header">
-          <div className="cr-logo">
+          <Link to="/" className="cr-logo">
             <span className="cr-logo-text">Terenick</span>
-          </div>
+          </Link>
         </div>
 
         <nav className="cr-sidebar-nav">

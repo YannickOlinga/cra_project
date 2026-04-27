@@ -226,6 +226,14 @@
   gap: 24px;
 }
 
+.contact-honeypot {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -253,7 +261,7 @@
   font-size: 16px;
   font-family: inherit;
   transition: all 0.3s ease;
-  color: #fff;
+  color: #000000;
 }
 
 .form-input:focus,
@@ -273,6 +281,23 @@
 .form-textarea {
   resize: vertical;
   min-height: 120px;
+}
+
+.recaptcha-notice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 78px;
+  padding: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.28);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.recaptcha-widget {
+  min-height: 78px;
 }
 
 .error-message {
@@ -548,6 +573,7 @@
   .form-row {
     grid-template-columns: 1fr;
   }
+
 }
 
 @media (max-width: 768px) {

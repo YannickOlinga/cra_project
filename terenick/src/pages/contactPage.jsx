@@ -1,13 +1,45 @@
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import './contactPage.css'
+import {
+  getRecaptchaV2Response,
+  renderRecaptchaV2,
+  resetRecaptchaV2,
+} from '../utils/recaptchaV2'
+
+const apiBaseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 
 function ContactPage() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     subject: '',
-    message: ''
+    message: '',
+    website: ''
   })
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitStatus, setSubmitStatus] = useState('')
+  const recaptchaRef = useRef(null)
+  const recaptchaWidgetIdRef = useRef(null)
+
+  useEffect(() => {
+    let isCancelled = false
+
+    renderRecaptchaV2(recaptchaRef.current)
+      .then((widgetId) => {
+        if (!isCancelled) {
+          recaptchaWidgetIdRef.current = widgetId
+        }
+      })
+      .catch(() => {
+        if (!isCancelled) {
+          setSubmitStatus('error')
+        }
+      })
+
+    return () => {
+      isCancelled = true
+    }
+  }, [])
 
   const handleChange = (e) => {
     setFormData({
@@ -16,16 +48,51 @@ function ContactPage() {
     })
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    console.log('Form submitted:', formData)
-    alert('Merci pour votre message. Nous vous répondrons dans les plus brefs délais.')
-    setFormData({
-      name: '',
-      email: '',
-      subject: '',
-      message: ''
-    })
+    setIsSubmitting(true)
+    setSubmitStatus('')
+
+    try {
+      const recaptchaToken = getRecaptchaV2Response(recaptchaWidgetIdRef.current)
+      if (!recaptchaToken) {
+        throw new Error('Veuillez valider le reCAPTCHA.')
+      }
+
+      const response = await fetch(`${apiBaseUrl}/mail/contact`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name.trim(),
+          email: formData.email.trim(),
+          subject: formData.subject.trim(),
+          message: formData.message.trim(),
+          website: formData.website.trim(),
+          recaptchaToken,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Impossible d'envoyer le message.")
+      }
+
+      setSubmitStatus('success')
+      setFormData({
+        name: '',
+        email: '',
+        subject: '',
+        message: '',
+        website: ''
+      })
+      resetRecaptchaV2(recaptchaWidgetIdRef.current)
+    } catch {
+      setSubmitStatus('error')
+      resetRecaptchaV2(recaptchaWidgetIdRef.current)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -44,6 +111,18 @@ function ContactPage() {
               <div className="contact-form-exact">
                 <h2>Envoyez-nous un message</h2>
                 <form onSubmit={handleSubmit}>
+                  <div className="contact-honeypot" aria-hidden="true">
+                    <label htmlFor="website">Site web</label>
+                    <input
+                      type="text"
+                      id="website"
+                      name="website"
+                      value={formData.website}
+                      onChange={handleChange}
+                      tabIndex={-1}
+                      autoComplete="off"
+                    />
+                  </div>
                   <div className="form-group-exact">
                     <input
                       type="text"
@@ -53,6 +132,7 @@ function ContactPage() {
                       onChange={handleChange}
                       required
                       placeholder="Nom"
+                      disabled={isSubmitting}
                     />
                   </div>
                   
@@ -65,6 +145,7 @@ function ContactPage() {
                       onChange={handleChange}
                       required
                       placeholder="Email"
+                      disabled={isSubmitting}
                     />
                   </div>
                   
@@ -77,6 +158,7 @@ function ContactPage() {
                       onChange={handleChange}
                       required
                       placeholder="Sujet"
+                      disabled={isSubmitting}
                     />
                   </div>
                   
@@ -89,12 +171,27 @@ function ContactPage() {
                       required
                       rows={6}
                       placeholder="Message"
+                      disabled={isSubmitting}
                     ></textarea>
                   </div>
+
+                  <div className="recaptcha-notice-exact">
+                    <div ref={recaptchaRef} className="recaptcha-widget"></div>
+                  </div>
                   
-                  <button type="submit" className="submit-btn-exact">
-                    Envoyer
+                  <button type="submit" className="submit-btn-exact" disabled={isSubmitting}>
+                    {isSubmitting ? 'Envoi en cours...' : 'Envoyer'}
                   </button>
+                  {submitStatus === 'success' ? (
+                    <p className="contact-submit-message contact-submit-message-success">
+                      Merci pour votre message. Nous vous répondrons dans les plus brefs délais.
+                    </p>
+                  ) : null}
+                  {submitStatus === 'error' ? (
+                    <p className="contact-submit-message contact-submit-message-error">
+                      Une erreur est survenue. Veuillez réessayer.
+                    </p>
+                  ) : null}
                 </form>
               </div>
             </div>
@@ -113,7 +210,7 @@ function ContactPage() {
                   </div>
                   <div className="contact-details">
                     <h4>Email</h4>
-                    <p>contact@terenick.com</p>
+                    <p>contact.terenick@gmail.com</p>
                   </div>
                 </div>
                 
