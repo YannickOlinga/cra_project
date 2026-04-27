@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import './modernContactPage.css'
-
+import Navbar from '../components/Navbar'
 function ModernContactPage() {
   const [formData, setFormData] = useState({
     name: '',
@@ -96,6 +96,8 @@ function ModernContactPage() {
   }
 
   return (
+    <>
+    <Navbar />  
     <div className="modern-contact-page">
       {/* Background avec particules animées */}
       <div className="background-animation">
@@ -112,9 +114,6 @@ function ModernContactPage() {
       {/* Header Section */}
       <header className="contact-header">
         <div className="header-content">
-          <div className="header-badge">
-            <span>Contact</span>
-          </div>
           <h1 className="header-title">
             Contactez-nous
           </h1>
@@ -385,6 +384,7 @@ function ModernContactPage() {
         </div>
       </footer>
     </div>
+    </>
   )
 }
 
