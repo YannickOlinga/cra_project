@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import './missions.css';
 import './compteRendu.css';
 import AddAssignmentModal from '../components/AddAssignmentModal';
+import { exportRowsToCsv } from '../utils/csvExport';
 
 const apiBaseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
@@ -83,6 +84,24 @@ export default function Missions() {
     window.location.href = '/login';
   }
 
+  function handleExportCsv() {
+    exportRowsToCsv(
+      'missions.csv',
+      [
+        { key: 'nom', label: 'Nom' },
+        { key: 'identifiant', label: 'Identifiant' },
+        { key: 'client', label: 'Client' },
+        { key: 'emailClient', label: 'Email client' },
+      ],
+      missionRows.map((mission) => ({
+        nom: mission.label || `mission ${mission.id}`,
+        identifiant: mission.id,
+        client: mission.customer?.company || 'Client inconnu',
+        emailClient: mission.customer?.user?.email || '-',
+      })),
+    );
+  }
+
   return (
     <div className="compte-rendu-container cr-layout">
       <aside className="cr-sidebar">
@@ -149,7 +168,7 @@ export default function Missions() {
         </nav>
 
         <div className="cr-sidebar-footer">
-          <p className="cr-copyright">© 2026. Propulsé par Timizer</p>
+          <p className="cr-copyright">© 2026. Propulsé par Terenick</p>
         </div>
       </aside>
 
@@ -190,17 +209,9 @@ export default function Missions() {
 
         <section className="missions-board">
           <div className="missions-toolbar">
-            <button type="button" className="missions-toolbar-btn" disabled>
+            <button type="button" className="missions-toolbar-btn" onClick={handleExportCsv}>
               Exporter (.csv)
             </button>
-            <div className="missions-toolbar-actions">
-              <button type="button" className="missions-toolbar-btn" disabled>
-                Enregistrer les filtres
-              </button>
-              <button type="button" className="missions-toolbar-btn missions-toolbar-btn-primary">
-                Réinitialiser les filtres
-              </button>
-            </div>
           </div>
 
           <div className="missions-table-shell">
