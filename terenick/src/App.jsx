@@ -39,7 +39,8 @@ return (
 <Route path="/sidebar" element={<Sidebar />} />
 <Route path="/login_provider" element={<LoginProvider />} />
 <Route path="/signup_provider" element={<SignupProvider />} />
-<Route path="/about" element={<ModernContact />} />
+<Route path="/about" element={<AboutPage />} />
+<Route path="/about-page" element={<Navigate to="/about" replace />} />
 <Route path="/contact" element={<ContactPage />} />
 <Route path="/moderncontact" element={<ModernContact />} />
 <Route path="/moderation-contact" element={<ModernContact />} />
