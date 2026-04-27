@@ -57,6 +57,11 @@ export class UsersService {
     });
   }
 
+  async findByEmail(email: string): Promise<SafeUser | null> {
+    const user = await this.usersRepository.findOne({ where: { email } });
+    return user ? this.toSafeUser(user) : null;
+  }
+
   async findAll(): Promise<SafeUser[]> {
     const users = await this.usersRepository.find();
     return users.map((user) => this.toSafeUser(user));
@@ -99,6 +104,17 @@ export class UsersService {
       }
       throw error;
     }
+  }
+
+  async updatePassword(id: number, password: string): Promise<SafeUser> {
+    const existingUser = await this.usersRepository.findOne({ where: { id } });
+    if (!existingUser) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    existingUser.password = await bcrypt.hash(password, 10);
+    const savedUser = await this.usersRepository.save(existingUser);
+    return this.toSafeUser(savedUser);
   }
 
   async remove(id: number): Promise<{ message: string }> {

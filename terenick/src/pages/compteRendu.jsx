@@ -213,9 +213,9 @@ export default function CompteRendu() {
       {/* Sidebar */}
       <aside className="cr-sidebar">
         <div className="cr-sidebar-header">
-          <div className="cr-logo">
+          <Link to="/" className="cr-logo">
             <span className="cr-logo-text">Terenick</span>
-          </div>
+          </Link>
         </div>
         
         <nav className="cr-sidebar-nav">
@@ -275,7 +275,7 @@ export default function CompteRendu() {
         </nav>
         
         <div className="cr-sidebar-footer">
-          <p className="cr-copyright">© 2026. Propulsé par Timizer</p>
+          <p className="cr-copyright">© 2026. Propulsé par Terenick</p>
         </div>
       </aside>
 

@@ -1,10 +1,57 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './login.css'
+import './login.css';
 
 const apiBaseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
-function login() {
+function Login() {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    setErrorMessage('');
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.message ?? 'Identifiants invalides.');
+      }
+
+      localStorage.setItem(
+        'authSession',
+        JSON.stringify({
+          token: data.access_token,
+          user: data.user,
+          role: data.role,
+          profile: data.profile,
+        }),
+      );
+
+      navigate('/dashboard');
+    } catch (error) {
+      setErrorMessage(error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   return (
     <>
       <div className="login-layout">
@@ -48,7 +95,7 @@ function login() {
         </section>
       </div>
     </>
-  )
+  );
 }
  
-export default login
+export default Login;
