@@ -290,8 +290,8 @@ function ModernContactPage() {
                     </div>
                     <div className="info-content">
                       <h3>Adresse</h3>
-                      <p>123 Avenue des Champs-Élysées</p>
-                      <span>75008 Paris, France</span>
+                      <p>79 Rue du Dauphiné</p>
+                      <span>69003 Lyon, France</span>
                     </div>
                   </div>
                 </div>
@@ -326,11 +326,11 @@ function ModernContactPage() {
             <div className="glass-card">
               <div className="card-header">
                 <h2>Nous trouver</h2>
-                <p>123 Avenue des Champs-Élysées, Paris</p>
+                <p>79 Rue du Dauphiné, 69003 Lyon</p>
               </div>
               <div className="map-container">
                 <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2624.9916256937595!2d2.295299815844311!3d48.87084497928756!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47e66f1e4b7b3b5b%3A0x40b82c3688c9a0b!2sAvenue%20des%20Champs-%C3%89lys%C3%A9es!5e0!3m2!1sfr!2sfr!4v1620000000000!5m2!1sfr!2sfr"
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d5567.78367974441!2d4.867965376464022!3d45.75331427108017!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47f4ea7807a74c55%3A0xe3591d0f0c570ab4!2s79%20Rue%20du%20Dauphin%C3%A9%2C%2069003%20Lyon!5e0!3m2!1sfr!2sfr!4v1777293879117!5m2!1sfr!2sfr"
                   width="100%"
                   height="400"
                   style={{ border: 0 }}
