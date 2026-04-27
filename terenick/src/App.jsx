@@ -10,6 +10,7 @@ import AboutPage from './pages/aboutPage';
 import ModernContact from './pages/modernContactPage';
 import ContactPage from './pages/contactPage';
 import RegisterForgetPassword from './pages/register_forget_password';
+import ResetPassword from './pages/reset_password';
 import Dashboard from './pages/dashboard';
 import Profile from './pages/profile';
 
@@ -43,6 +44,7 @@ return (
 <Route path="/moderncontact" element={<ModernContact />} />
 <Route path="/moderation-contact" element={<ModernContact />} />
 <Route path="/register_forget_password" element={<RegisterForgetPassword />} />
+<Route path="/reset-password" element={<ResetPassword />} />
 <Route path="/compte-rendu" element={<RequireAuth><CompteRendu /></RequireAuth>} />
 <Route path="/compte-rendu/:id" element={<RequireAuth><CompteRenduDetail /></RequireAuth>} />
 <Route path="/missions" element={<RequireAuth><Missions /></RequireAuth>} />

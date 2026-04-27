@@ -25,6 +25,10 @@
   padding: 2rem 2rem 1.5rem;
 }
 
+.cr-logo {
+  text-decoration: none;
+}
+
 .cr-logo-text {
   color: #17824b;
   font-size: 1.75rem;
