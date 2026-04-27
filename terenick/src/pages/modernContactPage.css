@@ -2,15 +2,15 @@
 
 /* Variables CSS */
 :root {
-  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  --accent-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-  --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+  --primary-gradient: #2c3e50;
+  --secondary-gradient: #2c3e50;
+  --accent-gradient: #2c3e50;
+  --success-gradient: #2c3e50;
   --glass-bg: rgba(255, 255, 255, 0.1);
   --glass-border: rgba(255, 255, 255, 0.2);
-  --text-primary: #1a1a2e;
-  --text-secondary: #6b7280;
-  --text-light: #9ca3af;
+  --text-primary: #ffffff;
+  --text-secondary: #ffffff;
+  --text-light: #ffffff;
   --shadow-soft: 0 8px 32px rgba(31, 38, 135, 0.15);
   --shadow-medium: 0 12px 40px rgba(31, 38, 135, 0.2);
   --shadow-large: 0 20px 60px rgba(31, 38, 135, 0.25);
@@ -33,7 +33,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  background:#2c3e50;
   z-index: -2;
   overflow: hidden;
 }
@@ -128,6 +128,7 @@
 
 /* Header Section */
 .contact-header {
+  margin-top: -100px;
   padding: 120px 0 80px;
   text-align: center;
   position: relative;
@@ -167,7 +168,7 @@
 
 .header-subtitle {
   font-size: clamp(1.1rem, 2vw, 1.3rem);
-  color: var(--text-secondary);
+  color: #ffffff;
   margin-bottom: 0;
   font-weight: 400;
 }
@@ -252,7 +253,7 @@
   font-size: 16px;
   font-family: inherit;
   transition: all 0.3s ease;
-  color: var(--text-primary);
+  color: #fff;
 }
 
 .form-input:focus,
