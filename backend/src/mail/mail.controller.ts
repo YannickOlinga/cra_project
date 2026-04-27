@@ -33,7 +33,11 @@ export class MailController {
       };
     }
 
-    if (!this.contactRateLimiterService.isAllowed(this.getRequestIdentifier(request))) {
+    if (
+      !this.contactRateLimiterService.isAllowed(
+        this.getRequestIdentifier(request),
+      )
+    ) {
       throw new HttpException(
         'Trop de messages envoyes. Veuillez reessayer plus tard.',
         HttpStatus.TOO_MANY_REQUESTS,

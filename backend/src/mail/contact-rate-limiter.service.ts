@@ -15,7 +15,8 @@ export class ContactRateLimiterService {
   isAllowed(identifier: string): boolean {
     const now = Date.now();
     const windowMs = Number(
-      this.configService.get<string>('CONTACT_RATE_LIMIT_WINDOW_MS') ?? 15 * 60 * 1000,
+      this.configService.get<string>('CONTACT_RATE_LIMIT_WINDOW_MS') ??
+        15 * 60 * 1000,
     );
     const maxAttempts = Number(
       this.configService.get<string>('CONTACT_RATE_LIMIT_MAX') ?? 5,

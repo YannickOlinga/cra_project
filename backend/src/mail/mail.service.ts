@@ -179,7 +179,13 @@ export class MailService {
   } {
     const logoPath =
       this.configService.get<string>('EMAIL_LOGO_PATH') ??
-      join(process.cwd(), '..', 'terenick', 'public', 'Logo-favicon-de-base-cra.ico');
+      join(
+        process.cwd(),
+        '..',
+        'terenick',
+        'public',
+        'Logo-favicon-de-base-cra.ico',
+      );
 
     if (existsSync(logoPath)) {
       return {
