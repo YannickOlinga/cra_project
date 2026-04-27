@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import './register_forget_password.css';
+import Navbar from '../components/Navbar';
 
 function RegisterForgetPassword() {
   const [email, setEmail] = useState('');
@@ -20,6 +21,7 @@ function RegisterForgetPassword() {
 
   return (
     <div className="forgot-layout">
+      <Navbar />
       <section className="forgot-panel">
         <form className="forgot-form" onSubmit={handleSubmit}>
           <p className="forgot-kicker">Accès au compte</p>

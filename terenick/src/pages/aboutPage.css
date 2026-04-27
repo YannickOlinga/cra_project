@@ -19,12 +19,12 @@
 }
 
 .hero-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4rem;
-  align-items: center;
+ display: flex;
+ flex-direction: row;
+ align-items: center;
+ margin-top: 4rem;
+ width: 100%;
+ padding: 0 !important;
 }
 
 .hero-text h1 {
