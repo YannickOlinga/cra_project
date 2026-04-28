@@ -34,7 +34,7 @@ function Footer({ className = '', variant = 'default' }) {
         
         <div className="footer-section">
           <h3>Contact</h3>
-          <p>Email: contact@terenick.com</p>
+          <p>Email: contact.terenick@gmail.com</p>
           <p>Téléphone: +33 1 23 45 67 89</p>
           <p>Adresse: 79 Rue du Dauphiné, 69003 Lyon</p>
         </div>

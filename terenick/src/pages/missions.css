@@ -45,7 +45,7 @@
   width: 7.2rem;
   height: 5.4rem;
   border-radius: 22px;
-  background: rgba(43, 183, 101, 0.1);
+  background: rgba(44, 62, 80, 0.1);
 }
 
 .missions-hero-icon-wrap::before {
@@ -54,7 +54,7 @@
   inset: 10px auto auto 10px;
   width: 3.9rem;
   height: 3.1rem;
-  border: 10px solid rgba(43, 183, 101, 0.13);
+  border: 10px solid rgba(44, 62, 80, 0.13);
   border-bottom-width: 8px;
   border-radius: 18px;
 }
@@ -67,7 +67,7 @@
   width: 4.2rem;
   height: 4.2rem;
   border-radius: 14px;
-  background: #0f5f33;
+  background: #2c3e50;
   transform: translate(-50%, -50%);
 }
 
@@ -75,7 +75,7 @@
   position: relative;
   width: 1.8rem;
   height: 1.15rem;
-  border: 3px solid #2fd07a;
+  border: 3px solid #9fb0bf;
   border-radius: 6px;
 }
 
@@ -86,7 +86,7 @@
   left: 0.05rem;
   width: 0.8rem;
   height: 0.45rem;
-  border: 3px solid #2fd07a;
+  border: 3px solid #9fb0bf;
   border-bottom: 0;
   border-radius: 4px 4px 0 0;
 }
@@ -104,9 +104,9 @@
 
 .missions-add-button {
   padding: 1rem 1.6rem;
-  background: linear-gradient(135deg, #31bf68, #17824b);
+  background: linear-gradient(135deg, #3d5368, #2c3e50);
   color: #fff;
-  box-shadow: 0 10px 24px rgba(23, 130, 75, 0.18);
+  box-shadow: 0 10px 24px rgba(44, 62, 80, 0.18);
 }
 
 .missions-board {

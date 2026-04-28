@@ -52,6 +52,28 @@
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
+.contact-submit-message {
+  margin: 1rem 0 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.contact-submit-message-success {
+  color: #2c3e50;
+}
+
+.contact-submit-message-error {
+  color: #d64545;
+}
+
+.contact-honeypot {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
 .contact-form-exact h2 {
   font-size: 24px;
   font-weight: 600;
@@ -85,6 +107,18 @@
 .form-group-exact textarea {
   resize: vertical;
   min-height: 120px;
+}
+
+.recaptcha-notice-exact {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 78px;
+  margin-bottom: 20px;
+}
+
+.recaptcha-widget {
+  min-height: 78px;
 }
 
 .submit-btn-exact {

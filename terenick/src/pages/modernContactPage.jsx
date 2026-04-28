@@ -1,18 +1,75 @@
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import './modernContactPage.css'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
+import {
+  getRecaptchaV2Response,
+  isRecaptchaConfigured,
+  renderRecaptchaV2,
+  resetRecaptchaV2,
+} from '../utils/recaptchaV2'
+
+const apiBaseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 
 function ModernContactPage() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     subject: '',
-    message: ''
+    message: '',
+    website: ''
   })
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState('')
+  const recaptchaRef = useRef(null)
+  const recaptchaWidgetIdRef = useRef(null)
+
+  useEffect(() => {
+    if (!isRecaptchaConfigured()) {
+      return undefined
+    }
+
+    let isCancelled = false
+
+    renderRecaptchaV2(recaptchaRef.current, {
+      onResolved: () => {
+        setErrors(prev => ({
+          ...prev,
+          recaptcha: ''
+        }))
+      },
+      onExpired: () => {
+        setErrors(prev => ({
+          ...prev,
+          recaptcha: 'Veuillez valider à nouveau le reCAPTCHA'
+        }))
+      },
+      onError: () => {
+        setErrors(prev => ({
+          ...prev,
+          recaptcha: 'reCAPTCHA est indisponible'
+        }))
+      },
+    })
+      .then((widgetId) => {
+        if (!isCancelled) {
+          recaptchaWidgetIdRef.current = widgetId
+        }
+      })
+      .catch(() => {
+        if (!isCancelled) {
+          setErrors(prev => ({
+            ...prev,
+            recaptcha: 'reCAPTCHA est indisponible'
+          }))
+        }
+      })
+
+    return () => {
+      isCancelled = true
+    }
+  }, [])
 
   // Validation des champs
   const validateForm = () => {
@@ -38,6 +95,12 @@ function ModernContactPage() {
       newErrors.message = 'Le message est requis'
     } else if (formData.message.length < 10) {
       newErrors.message = 'Le message doit contenir au moins 10 caractères'
+    }
+
+    if (!isRecaptchaConfigured()) {
+      newErrors.recaptcha = 'reCAPTCHA est indisponible'
+    } else if (!getRecaptchaV2Response(recaptchaWidgetIdRef.current)) {
+      newErrors.recaptcha = 'Veuillez valider le reCAPTCHA'
     }
     
     setErrors(newErrors)
@@ -70,19 +133,37 @@ function ModernContactPage() {
     setIsSubmitting(true)
     setSubmitStatus('')
     
-    // Simuler l'envoi du formulaire
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      const recaptchaToken = getRecaptchaV2Response(recaptchaWidgetIdRef.current)
+      const response = await fetch(`${apiBaseUrl}/mail/contact`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name.trim(),
+          email: formData.email.trim(),
+          subject: formData.subject.trim(),
+          message: formData.message.trim(),
+          website: formData.website.trim(),
+          recaptchaToken,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Impossible d'envoyer le message.")
+      }
       
-      // Succès
       setSubmitStatus('success')
       setFormData({
         name: '',
         email: '',
         subject: '',
-        message: ''
+        message: '',
+        website: ''
       })
       setErrors({})
+      resetRecaptchaV2(recaptchaWidgetIdRef.current)
       
       // Masquer le message de succès après 5 secondes
       setTimeout(() => {
@@ -92,6 +173,7 @@ function ModernContactPage() {
     } catch (error) {
       console.error('Form submission error:', error)
       setSubmitStatus('error')
+      resetRecaptchaV2(recaptchaWidgetIdRef.current)
     } finally {
       setIsSubmitting(false)
     }
@@ -138,6 +220,18 @@ function ModernContactPage() {
                 </div>
                 
                 <form onSubmit={handleSubmit} className="contact-form">
+                  <div className="contact-honeypot" aria-hidden="true">
+                    <label htmlFor="website">Site web</label>
+                    <input
+                      type="text"
+                      id="website"
+                      name="website"
+                      value={formData.website}
+                      onChange={handleChange}
+                      tabIndex={-1}
+                      autoComplete="off"
+                    />
+                  </div>
                   <div className="form-row">
                     <div className="form-group">
                       <label htmlFor="name">Nom complet</label>
@@ -198,6 +292,11 @@ function ModernContactPage() {
                       disabled={isSubmitting}
                     ></textarea>
                     {errors.message && <span className="error-message">{errors.message}</span>}
+                  </div>
+
+                  <div className="recaptcha-notice">
+                    <div ref={recaptchaRef} className="recaptcha-widget"></div>
+                    {errors.recaptcha && <span className="error-message">{errors.recaptcha}</span>}
                   </div>
                   
                   <button 
@@ -263,7 +362,7 @@ function ModernContactPage() {
                     </div>
                     <div className="info-content">
                       <h3>Email</h3>
-                      <p>contact@terenick.com</p>
+                      <p>contact.terenick@gmail.com</p>
                       <span>Réponse sous 24h</span>
                     </div>
                   </div>
