@@ -100,7 +100,17 @@ function SignupProvider() {
         throw new Error(message);
       }
 
-      setSuccessMessage('Compte créé. Redirection vers la connexion...');
+      localStorage.setItem(
+        'authSession',
+        JSON.stringify({
+          token: data.access_token,
+          user: data.user,
+          role: data.role,
+          profile: data.profile,
+        }),
+      );
+
+      setSuccessMessage('Compte créé. Redirection vers votre espace...');
       setFormData({
         first_name: '',
         last_name: '',
@@ -111,7 +121,7 @@ function SignupProvider() {
       resetRecaptchaV2(recaptchaWidgetIdRef.current);
 
       window.setTimeout(() => {
-        navigate('/login_provider');
+        navigate('/dashboard');
       }, 1200);
     } catch (error) {
       const message =
