@@ -11,6 +11,7 @@ import ContactPage from './pages/contactPage';
 import RegisterForgetPassword from './pages/register_forget_password';
 import ResetPassword from './pages/reset_password';
 import Profile from './pages/profile';
+import ClientInterface from './pages/client_interface';
 
 function RequireAuth({ children }) {
   let session = null;
@@ -56,7 +57,7 @@ return (
 <Route path="/clients" element={<RequireAuth><Clients /></RequireAuth>} />
 <Route path="/dashboard" element={<Navigate to="/compte-rendu" replace />} />
 <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
-
+<Route path="/client_interface" element={<ClientInterface />} />
 </Routes>
 </Router>
 );

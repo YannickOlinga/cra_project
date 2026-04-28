@@ -400,3 +400,24 @@
     gap: 0.55rem;
   }
 }
+
+.tableau-header {
+  font-weight: bold; 
+  border-bottom: 1px solid #ccc;
+  width: 10%;
+  padding: 1rem;
+  text-align: center;
+}
+.tableau-cell {
+  padding: 1rem;
+  border-bottom: 1px solid #ccc;
+  width: 10%;
+  text-align: center;
+  cursor: pointer;
+  
+}
+.tableau {
+  margin-top: 2rem;
+  background-color: #ffffff;
+}
+
