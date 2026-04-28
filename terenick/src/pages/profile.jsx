@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import './profile.css';
+import './profile.css';   
 import Footer from '../components/Footer';
+import Navbar from '../components/Navbar';
 
 function Profile() {
   const apiBaseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
@@ -105,11 +106,11 @@ function Profile() {
   }
 
   return (
+    <>
+    <Navbar />
     <div className="profile-page">
       <section className="profile-shell">
-        <Link to="/dashboard" className="profile-back">
-          Retour au dashboard
-        </Link>
+       
 
         <p className="profile-kicker">Mon profil</p>
         <h1 className="profile-title">
@@ -178,10 +179,11 @@ function Profile() {
           <button className="profile-submit" type="submit" disabled={isSubmitting}>
             {isSubmitting ? 'Enregistrement...' : 'Enregistrer les modifications'}
           </button>
-        </form>
-        <Footer className="profile-footer" variant="compact" />
+        </form> 
       </section>
     </div>
+        <Footer/>
+    </>
   );
 }
 

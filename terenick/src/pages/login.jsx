@@ -45,7 +45,7 @@ function Login() {
         }),
       );
 
-      navigate('/dashboard');
+      navigate('/compte-rendu');
     } catch (error) {
       setErrorMessage(error.message);
     } finally {

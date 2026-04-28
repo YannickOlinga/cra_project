@@ -82,7 +82,7 @@ export default function Navbar() {
         {/* Bouton Desktop */}
         {session ? (
             <div className="desktop-only user-actions">
-                <a href="/dashboard" className="user-badge-link" title="Dashboard">
+                <a href="/profile" className="user-badge-link" title="Dashboard">
                     <div className="user-badge">
                         {initials}
                     </div>
