@@ -1,6 +1,24 @@
 const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY
 const scriptId = 'google-recaptcha-v2'
 
+function waitForRecaptcha() {
+  return new Promise((resolve, reject) => {
+    const startedAt = Date.now()
+    const intervalId = window.setInterval(() => {
+      if (window.grecaptcha?.render) {
+        window.clearInterval(intervalId)
+        resolve()
+        return
+      }
+
+      if (Date.now() - startedAt > 10000) {
+        window.clearInterval(intervalId)
+        reject(new Error('reCAPTCHA ne répond pas'))
+      }
+    }, 100)
+  })
+}
+
 function loadRecaptchaScript() {
   if (!siteKey) {
     return Promise.reject(new Error('VITE_RECAPTCHA_SITE_KEY manquant'))
@@ -13,7 +31,14 @@ function loadRecaptchaScript() {
   const existingScript = document.getElementById(scriptId)
   if (existingScript) {
     return new Promise((resolve, reject) => {
-      existingScript.addEventListener('load', () => resolve(), { once: true })
+      if (window.grecaptcha?.render) {
+        resolve()
+        return
+      }
+
+      existingScript.addEventListener('load', () => waitForRecaptcha().then(resolve).catch(reject), {
+        once: true,
+      })
       existingScript.addEventListener('error', () => reject(new Error('reCAPTCHA indisponible')), {
         once: true,
       })
@@ -23,10 +48,10 @@ function loadRecaptchaScript() {
   return new Promise((resolve, reject) => {
     const script = document.createElement('script')
     script.id = scriptId
-    script.src = 'https://www.google.com/recaptcha/api.js?render=explicit'
+    script.src = 'https://www.google.com/recaptcha/api.js?render=explicit&hl=fr'
     script.async = true
     script.defer = true
-    script.onload = () => resolve()
+    script.onload = () => waitForRecaptcha().then(resolve).catch(reject)
     script.onerror = () => reject(new Error('reCAPTCHA indisponible'))
     document.head.appendChild(script)
   })
@@ -43,13 +68,21 @@ export async function renderRecaptchaV2(container, callbacks = {}) {
     return Number(container.dataset.widgetId)
   }
 
-  const widgetId = window.grecaptcha.render(container, {
-    sitekey: siteKey,
-    theme: 'light',
-    callback: callbacks.onResolved,
-    'expired-callback': callbacks.onExpired,
-    'error-callback': callbacks.onError,
-  })
+  let widgetId
+
+  try {
+    widgetId = window.grecaptcha.render(container, {
+      sitekey: siteKey,
+      theme: 'light',
+      callback: callbacks.onResolved,
+      'expired-callback': callbacks.onExpired,
+      'error-callback': callbacks.onError,
+    })
+  } catch (error) {
+    throw new Error(
+      error instanceof Error ? error.message : 'Rendu reCAPTCHA impossible',
+    )
+  }
 
   container.dataset.widgetId = String(widgetId)
   return widgetId

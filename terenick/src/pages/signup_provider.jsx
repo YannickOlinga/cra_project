@@ -1,8 +1,15 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './provider.css';
 import Navbar from '../components/Navbar';
+import {
+  getRecaptchaV2Response,
+  renderRecaptchaV2,
+  resetRecaptchaV2,
+} from '../utils/recaptchaV2';
+
 const apiBaseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
+
 function SignupProvider() {
   const navigate = useNavigate();
   const [role, setRole] = useState('provider');
@@ -16,6 +23,29 @@ function SignupProvider() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const recaptchaRef = useRef(null);
+  const recaptchaWidgetIdRef = useRef(null);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    renderRecaptchaV2(recaptchaRef.current)
+      .then((widgetId) => {
+        if (!isCancelled) {
+          recaptchaWidgetIdRef.current = widgetId;
+        }
+      })
+      .catch((error) => {
+        if (!isCancelled) {
+          console.error('reCAPTCHA render error:', error);
+          setErrorMessage('reCAPTCHA est indisponible.');
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -38,12 +68,18 @@ function SignupProvider() {
     setIsSubmitting(true);
 
     try {
+      const recaptchaToken = getRecaptchaV2Response(recaptchaWidgetIdRef.current);
+      if (!recaptchaToken) {
+        throw new Error('Veuillez valider le reCAPTCHA.');
+      }
+
       const payload = {
         role,
         first_name: formData.first_name.trim(),
         last_name: formData.last_name.trim(),
         email: formData.email.trim(),
         password: formData.password,
+        recaptchaToken,
         ...(role === 'customer' ? { company: formData.company.trim() } : {}),
       };
 
@@ -72,6 +108,7 @@ function SignupProvider() {
         password: '',
         company: '',
       });
+      resetRecaptchaV2(recaptchaWidgetIdRef.current);
 
       window.setTimeout(() => {
         navigate('/login_provider');
@@ -180,6 +217,9 @@ function SignupProvider() {
             {successMessage ? (
               <p className="form-message success">{successMessage}</p>
             ) : null}
+            <div className="signup-recaptcha">
+              <div ref={recaptchaRef} className="recaptcha-widget"></div>
+            </div>
             <button className="signup-submit" type="submit" disabled={isSubmitting}>
               {isSubmitting ? 'Inscription...' : 'S\'inscrire'}
             </button>

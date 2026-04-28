@@ -10,6 +10,7 @@ import { UsersService } from '../users/users.service';
 import { CustomersService } from '../customers/customers.service';
 import { ProvidersService } from '../providers/providers.service';
 import { MailService } from '../mail/mail.service';
+import { RecaptchaService } from '../mail/recaptcha.service';
 import { AccountRole, RegisterAccountDto } from './dto/register-account.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -33,6 +34,7 @@ export class AuthService {
     private readonly providersService: ProvidersService,
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,
+    private readonly recaptchaService: RecaptchaService,
     private readonly configService: ConfigService,
   ) {}
 
@@ -89,7 +91,12 @@ export class AuthService {
     };
   }
 
-  async register(registerAccountDto: RegisterAccountDto) {
+  async register(registerAccountDto: RegisterAccountDto, remoteIp: string) {
+    await this.recaptchaService.verifyRegisterToken(
+      registerAccountDto.recaptchaToken,
+      remoteIp,
+    );
+
     const user = await this.usersService.create({
       first_name: registerAccountDto.first_name,
       last_name: registerAccountDto.last_name,

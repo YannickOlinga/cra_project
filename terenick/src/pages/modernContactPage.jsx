@@ -57,8 +57,9 @@ function ModernContactPage() {
           recaptchaWidgetIdRef.current = widgetId
         }
       })
-      .catch(() => {
+      .catch((error) => {
         if (!isCancelled) {
+          console.error('reCAPTCHA render error:', error)
           setErrors(prev => ({
             ...prev,
             recaptcha: 'reCAPTCHA est indisponible'

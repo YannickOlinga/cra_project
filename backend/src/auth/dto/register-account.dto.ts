@@ -36,6 +36,11 @@ export class RegisterAccountDto {
   @MaxLength(100)
   password!: string;
 
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(4000)
+  recaptchaToken!: string;
+
   @ValidateIf(
     (payload: Record<string, any>) => payload.role === AccountRole.Customer,
   )
