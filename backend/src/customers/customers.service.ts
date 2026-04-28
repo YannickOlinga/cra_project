@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -11,6 +12,10 @@ import { Customer } from './entities/customer.entity';
 import { User } from '../users/entities/user.entity';
 import * as bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
+import { Assignment } from '../assignments/entities/assignment.entity';
+import { AccountRole } from '../auth/dto/register-account.dto';
+import type { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
+import { Provider } from '../providers/entities/provider.entity';
 
 @Injectable()
 export class CustomersService {
@@ -20,6 +25,12 @@ export class CustomersService {
 
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+
+    @InjectRepository(Assignment)
+    private readonly assignmentsRepository: Repository<Assignment>,
+
+    @InjectRepository(Provider)
+    private readonly providersRepository: Repository<Provider>,
   ) {}
 
   private isUniqueConstraintError(error: unknown): boolean {
@@ -30,7 +41,10 @@ export class CustomersService {
     );
   }
 
-  async create(createCustomerDto: CreateCustomerDto): Promise<Customer> {
+  async create(
+    createCustomerDto: CreateCustomerDto,
+    auth?: AuthenticatedUser,
+  ): Promise<Customer> {
     const { user_id, company, identifier, name, email } = createCustomerDto;
 
     let user: User | null = null;
@@ -64,6 +78,18 @@ export class CustomersService {
       user,
     });
 
+    if (auth?.role === AccountRole.Provider) {
+      const provider = await this.providersRepository.findOne({
+        where: { id: auth.profileId },
+      });
+
+      if (!provider) {
+        throw new NotFoundException(`Provider with ID ${auth.profileId} not found`);
+      }
+
+      customer.provider = provider;
+    }
+
     try {
       return await this.customersRepository.save(customer);
     } catch (error) {
@@ -74,10 +100,32 @@ export class CustomersService {
     }
   }
 
-  async findAll(): Promise<Customer[]> {
-    return this.customersRepository.find({
-      relations: ['user'],
-    });
+  async findAll(auth: AuthenticatedUser): Promise<Customer[]> {
+    if (auth.role === AccountRole.Customer) {
+      return this.customersRepository.find({
+        where: { id: auth.profileId },
+        relations: ['user'],
+      });
+    }
+
+    if (auth.role === AccountRole.Provider) {
+      return this.customersRepository
+        .createQueryBuilder('customer')
+        .leftJoinAndSelect('customer.user', 'user')
+        .leftJoin('customer.provider', 'ownerProvider')
+        .leftJoin(
+          Assignment,
+          'assignment',
+          'assignment.customers_id = customer.id AND assignment.providers_id = :providerId',
+          { providerId: auth.profileId },
+        )
+        .where('ownerProvider.id = :providerId', { providerId: auth.profileId })
+        .orWhere('assignment.id IS NOT NULL')
+        .orderBy('customer.id', 'DESC')
+        .getMany();
+    }
+
+    return [];
   }
 
   async findOneByUserId(userId: number): Promise<Customer | null> {
@@ -87,13 +135,16 @@ export class CustomersService {
     });
   }
 
-  async findOne(id: number): Promise<Customer> {
+  async findOne(id: number, auth?: AuthenticatedUser): Promise<Customer> {
     const customer = await this.customersRepository.findOne({
       where: { id },
-      relations: ['user'],
+      relations: ['user', 'provider'],
     });
     if (!customer) {
       throw new NotFoundException(`Customer with ID ${id} not found`);
+    }
+    if (auth) {
+      await this.assertCanAccessCustomer(customer, auth);
     }
     return customer;
   }
@@ -101,14 +152,9 @@ export class CustomersService {
   async update(
     id: number,
     updateCustomerDto: UpdateCustomerDto,
+    auth?: AuthenticatedUser,
   ): Promise<Customer> {
-    const customer = await this.customersRepository.findOne({
-      where: { id },
-      relations: ['user'],
-    });
-    if (!customer) {
-      throw new NotFoundException(`Customer with ID ${id} not found`);
-    }
+    const customer = await this.findOne(id, auth);
 
     if (updateCustomerDto.name !== undefined) {
       const trimmedName = updateCustomerDto.name.trim();
@@ -163,10 +209,38 @@ export class CustomersService {
     }
   }
 
-  async remove(id: number): Promise<void> {
-    const customer = await this.findOne(id);
+  async remove(id: number, auth?: AuthenticatedUser): Promise<void> {
+    const customer = await this.findOne(id, auth);
     await this.customersRepository.remove(customer);
 
     return;
+  }
+
+  private async assertCanAccessCustomer(
+    customer: Customer,
+    auth: AuthenticatedUser,
+  ): Promise<void> {
+    if (auth.role === AccountRole.Customer && customer.id === auth.profileId) {
+      return;
+    }
+
+    if (auth.role === AccountRole.Provider) {
+      if (customer.provider?.id === auth.profileId) {
+        return;
+      }
+
+      const assignment = await this.assignmentsRepository.findOne({
+        where: {
+          customers_id: customer.id,
+          providers_id: auth.profileId,
+        },
+      });
+
+      if (assignment) {
+        return;
+      }
+    }
+
+    throw new ForbiddenException("Vous n'avez pas acces a ce client.");
   }
 }

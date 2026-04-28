@@ -5,7 +5,6 @@ const apiBaseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
 const initialForm = {
   missionName: '',
-  customerName: '',
   customerId: '',
 };
 
@@ -75,17 +74,6 @@ export default function AddAssignmentModal({ isOpen, onClose, onCreated }) {
       [name]: value,
     };
 
-    if (name === 'customerId') {
-      const selectedCustomer = customers.find(
-        (customer) => String(customer.id) === String(value),
-      );
-      if (selectedCustomer) {
-        nextState.customerName =
-          selectedCustomer.company ||
-          `${selectedCustomer.user?.first_name ?? ''} ${selectedCustomer.user?.last_name ?? ''}`.trim();
-      }
-    }
-
     setFormData(nextState);
     setErrorMessage('');
   }
@@ -100,10 +88,9 @@ export default function AddAssignmentModal({ isOpen, onClose, onCreated }) {
     }
 
     const trimmedMissionName = formData.missionName.trim();
-    const trimmedCustomerName = formData.customerName.trim();
     const customerId = Number(formData.customerId);
 
-    if (!trimmedMissionName || !trimmedCustomerName || !customerId) {
+    if (!trimmedMissionName || !customerId) {
       setErrorMessage('Tous les champs sont obligatoires.');
       return;
     }
@@ -111,25 +98,6 @@ export default function AddAssignmentModal({ isOpen, onClose, onCreated }) {
     setIsSubmitting(true);
 
     try {
-      const customerResponse = await fetch(`${apiBaseUrl}/customers/${customerId}`, {
-        headers: {
-          Authorization: `Bearer ${session.token}`,
-        },
-      });
-
-      const customerData = await customerResponse.json().catch(() => null);
-      if (!customerResponse.ok) {
-        throw new Error(customerData?.message ?? 'Client introuvable.');
-      }
-
-      const customerDisplayName =
-        customerData?.company?.trim?.() ||
-        `${customerData?.user?.first_name ?? ''} ${customerData?.user?.last_name ?? ''}`.trim();
-
-      if (customerDisplayName.toLowerCase() !== trimmedCustomerName.toLowerCase()) {
-        throw new Error("Le nom du client ne correspond pas à l'ID fourni.");
-      }
-
       const createResponse = await fetch(`${apiBaseUrl}/assignments/`, {
         method: 'POST',
         headers: {
@@ -152,7 +120,13 @@ export default function AddAssignmentModal({ isOpen, onClose, onCreated }) {
         throw new Error(message);
       }
 
-      onCreated?.(createdAssignment);
+      const selectedCustomer =
+        customers.find((customer) => Number(customer.id) === customerId) ?? null;
+
+      onCreated?.({
+        ...createdAssignment,
+        customer: createdAssignment?.customer ?? selectedCustomer,
+      });
       onClose();
     } catch (error) {
       setErrorMessage(
@@ -190,42 +164,33 @@ export default function AddAssignmentModal({ isOpen, onClose, onCreated }) {
           </label>
 
           <label className="assignment-field">
-            <span>Nom du client</span>
-            <input
-              type="text"
-              name="customerName"
-              value={formData.customerName}
-              onChange={handleChange}
-              placeholder="Ex: CREDIT LYONNAIS"
-              list="customers-list"
-            />
-          </label>
-
-          <label className="assignment-field">
-            <span>ID du client</span>
-            <input
-              type="number"
-              min="1"
+            <span>Client</span>
+            <select
               name="customerId"
               value={formData.customerId}
               onChange={handleChange}
-              placeholder="Ex: 3"
-            />
-          </label>
-
-          <datalist id="customers-list">
-            {customers.map((customer) => (
-              <option
-                key={customer.id}
-                value={
-                  customer.company ||
-                  `${customer.user?.first_name ?? ''} ${customer.user?.last_name ?? ''}`.trim()
-                }
-              >
-                {customer.user?.email ?? ''}
+              disabled={customers.length === 0}
+            >
+              <option value="">
+                {customers.length === 0
+                  ? 'Aucun client disponible'
+                  : 'Sélectionnez un client'}
               </option>
-            ))}
-          </datalist>
+              {customers.map((customer) => {
+                const customerName =
+                  customer.company ||
+                  `${customer.user?.first_name ?? ''} ${customer.user?.last_name ?? ''}`.trim() ||
+                  `Client #${customer.id}`;
+
+                return (
+                  <option key={customer.id} value={customer.id}>
+                    {customerName}
+                    {customer.user?.email ? ` - ${customer.user.email}` : ''}
+                  </option>
+                );
+              })}
+            </select>
+          </label>
 
           {errorMessage ? <p className="assignment-modal-error">{errorMessage}</p> : null}
 

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import './compteRendu.css';
 import './compteRenduDetail.css';
+import { exportRowsToCsv } from '../utils/csvExport';
 
 const apiBaseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
@@ -9,6 +10,12 @@ const weekdayLabels = ['lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.', 'dim.'];
 
 const monthTitleFormatter = new Intl.DateTimeFormat('fr-FR', {
   month: 'long',
+  year: 'numeric',
+});
+
+const dayDateFormatter = new Intl.DateTimeFormat('fr-FR', {
+  day: '2-digit',
+  month: '2-digit',
   year: 'numeric',
 });
 
@@ -33,6 +40,16 @@ function buildMonthGrid(month, year) {
   return cells;
 }
 
+function buildCalendarWeeks(cells) {
+  const weeks = [];
+
+  for (let index = 0; index < cells.length; index += 7) {
+    weeks.push(cells.slice(index, index + 7));
+  }
+
+  return weeks;
+}
+
 function formatPastDay(value) {
   if (Number(value) === 1) {
     return '1 j.';
@@ -45,11 +62,45 @@ function formatPastDay(value) {
   return '-';
 }
 
+function formatSummaryDays(value) {
+  return `${Number(value).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} j.`;
+}
+
+function getAssignmentClientLabel(assignment) {
+  return (
+    assignment?.customer?.company ||
+    `${assignment?.customer?.user?.first_name ?? ''} ${assignment?.customer?.user?.last_name ?? ''}`.trim() ||
+    '-'
+  );
+}
+
+function getWeekRangeLabel(week) {
+  const days = week.filter(Boolean);
+
+  if (!days.length) {
+    return '';
+  }
+
+  return `du ${days[0]} au ${days[days.length - 1]}`;
+}
+
+function slugify(value) {
+  return String(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase();
+}
+
 export default function CompteRenduDetail() {
   const { id } = useParams();
   const [session, setSession] = useState(null);
   const [report, setReport] = useState(null);
   const [assignment, setAssignment] = useState(null);
+  const [reportAssignments, setReportAssignments] = useState([]);
+  const [selectedAssignmentId, setSelectedAssignmentId] = useState('');
+  const [monthlyReportContexts, setMonthlyReportContexts] = useState([]);
   const [lines, setLines] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
@@ -108,22 +159,88 @@ export default function CompteRenduDetail() {
           throw new Error('Impossible de charger les journées du CRA.');
         }
 
-        let assignmentData = null;
-        if (reportData.assignments_id) {
-          const assignmentResponse = await fetch(
-            `${apiBaseUrl}/assignments/${reportData.assignments_id}`,
-            {
-              headers: {
-                Authorization: `Bearer ${session.token}`,
-              },
-            },
-          );
+        const assignmentsResponse = await fetch(`${apiBaseUrl}/assignments`, {
+          headers: {
+            Authorization: `Bearer ${session.token}`,
+          },
+        });
+        const assignmentsData = await assignmentsResponse.json().catch(() => []);
+        const providerAssignments = Array.isArray(assignmentsData) ? assignmentsData : [];
+        const assignmentsById = new Map(
+          providerAssignments.map((providerAssignment) => [
+            Number(providerAssignment.id),
+            providerAssignment,
+          ]),
+        );
+        const reportAssignmentIds = Array.from(
+          new Set([
+            ...(reportData.assignment_ids ?? []),
+            ...(reportData.assignments_id ? [reportData.assignments_id] : []),
+          ].map(Number).filter(Boolean)),
+        );
+        const reportAssignmentsData = reportAssignmentIds
+          .map((assignmentId) => assignmentsById.get(assignmentId))
+          .filter(Boolean);
+        const assignmentData = reportAssignmentsData[0] ?? null;
 
-          assignmentData = await assignmentResponse.json().catch(() => null);
-          if (!assignmentResponse.ok) {
-            assignmentData = null;
-          }
-        }
+        const reportsResponse = await fetch(`${apiBaseUrl}/activity-reports`, {
+          headers: {
+            Authorization: `Bearer ${session.token}`,
+          },
+        });
+        const reportsData = await reportsResponse.json().catch(() => []);
+
+        const sameMonthReports = Array.isArray(reportsData)
+          ? reportsData.filter(
+              (monthlyReport) =>
+                Number(monthlyReport.month) === Number(reportData.month) &&
+                Number(monthlyReport.year) === Number(reportData.year),
+            )
+          : [];
+
+        const reportContexts = await Promise.all(
+          sameMonthReports.map(async (monthlyReport) => {
+            const reportLinesPromise =
+              Number(monthlyReport.id) === Number(reportData.id)
+                ? Promise.resolve(linesData)
+                : fetch(
+                    `${apiBaseUrl}/activity-reports-lines?activity_report_id=${monthlyReport.id}`,
+                    {
+                      headers: {
+                        Authorization: `Bearer ${session.token}`,
+                      },
+                    },
+                  )
+                    .then((response) => response.json())
+                    .catch(() => []);
+
+            const assignmentPromise =
+              Promise.resolve(
+                Array.from(
+                  new Set([
+                    ...(monthlyReport.assignment_ids ?? []),
+                    ...(monthlyReport.assignments_id
+                      ? [monthlyReport.assignments_id]
+                      : []),
+                  ].map(Number).filter(Boolean)),
+                )
+                  .map((assignmentId) => assignmentsById.get(assignmentId))
+                  .filter(Boolean),
+              );
+
+            const [monthlyLines, monthlyAssignment] = await Promise.all([
+              reportLinesPromise,
+              assignmentPromise,
+            ]);
+
+            return {
+              report: monthlyReport,
+              assignment: monthlyAssignment[0] ?? null,
+              assignments: monthlyAssignment,
+              lines: Array.isArray(monthlyLines) ? monthlyLines : [],
+            };
+          }),
+        );
 
         if (isCancelled) {
           return;
@@ -132,6 +249,15 @@ export default function CompteRenduDetail() {
         setReport(reportData);
         setLines(linesData);
         setAssignment(assignmentData);
+        setReportAssignments(reportAssignmentsData);
+        setSelectedAssignmentId((current) =>
+          reportAssignmentsData.some((item) => String(item.id) === current)
+            ? current
+            : reportAssignmentsData[0]
+              ? String(reportAssignmentsData[0].id)
+              : '',
+        );
+        setMonthlyReportContexts(reportContexts);
       } catch (error) {
         if (!isCancelled) {
           setErrorMessage(
@@ -166,9 +292,32 @@ export default function CompteRenduDetail() {
     return buildMonthGrid(report.month, report.year);
   }, [report]);
 
-  const linesByDay = useMemo(() => {
+  const calendarWeeks = useMemo(() => buildCalendarWeeks(calendarCells), [calendarCells]);
+
+  const dayWeekIndex = useMemo(() => {
+    return calendarWeeks.reduce((map, week, weekIndex) => {
+      week.forEach((day) => {
+        if (day) {
+          map.set(day, weekIndex);
+        }
+      });
+
+      return map;
+    }, new Map());
+  }, [calendarWeeks]);
+
+  const selectedLinesByDay = useMemo(() => {
     return lines.reduce((map, line) => {
-      map.set(line.day, line);
+      if (String(line.assignments_id) === selectedAssignmentId) {
+        map.set(line.day, line);
+      }
+      return map;
+    }, new Map());
+  }, [lines, selectedAssignmentId]);
+
+  const dayTotals = useMemo(() => {
+    return lines.reduce((map, line) => {
+      map.set(line.day, (map.get(line.day) ?? 0) + Number(line.past_day || 0));
       return map;
     }, new Map());
   }, [lines]);
@@ -178,10 +327,130 @@ export default function CompteRenduDetail() {
     return total.toLocaleString('fr-FR', { maximumFractionDigits: 1 });
   }, [lines]);
 
-  const clientLabel =
-    assignment?.customer?.company ||
-    `${assignment?.customer?.user?.first_name ?? ''} ${assignment?.customer?.user?.last_name ?? ''}`.trim() ||
-    '-';
+  const weeklyMissionSummaries = useMemo(() => {
+    return monthlyReportContexts.reduce((map, context) => {
+      const contextLines =
+        Number(context.report?.id) === Number(report?.id) ? lines : context.lines;
+
+      contextLines.forEach((line) => {
+        const weekIndex = dayWeekIndex.get(Number(line.day));
+        const pastDay = Number(line.past_day ?? 0);
+
+        if (weekIndex === undefined || pastDay <= 0) {
+          return;
+        }
+
+        if (!map.has(weekIndex)) {
+          map.set(weekIndex, new Map());
+        }
+
+        const weekMap = map.get(weekIndex);
+        const assignmentId = Number(line.assignments_id);
+        const contextAssignment = context.assignments?.find(
+          (item) => Number(item.id) === assignmentId,
+        ) ?? context.assignment;
+        const existing = weekMap.get(assignmentId) ?? {
+          assignmentId,
+          mission:
+            contextAssignment?.label ||
+            context.report?.assignment?.label ||
+            `Mission #${assignmentId}`,
+          client: getAssignmentClientLabel(contextAssignment),
+          total: 0,
+        };
+
+        weekMap.set(assignmentId, {
+          ...existing,
+          total: existing.total + pastDay,
+        });
+      });
+
+      return map;
+    }, new Map());
+  }, [dayWeekIndex, lines, monthlyReportContexts, report]);
+
+  const monthlyMissions = useMemo(() => {
+    return Array.from(
+      new Set(
+        monthlyReportContexts.flatMap((context) =>
+          context.assignments?.length
+            ? context.assignments.map((item) => item.label || `Mission #${item.id}`)
+            : [
+                context.assignment?.label ||
+                  context.report?.assignment?.label ||
+                  `Mission #${context.report?.assignments_id ?? context.report?.id}`,
+              ],
+        ),
+      ),
+    );
+  }, [monthlyReportContexts]);
+
+  const monthlyClients = useMemo(() => {
+    return Array.from(
+      new Set(
+        monthlyReportContexts
+          .flatMap((context) =>
+            context.assignments?.length
+              ? context.assignments.map((item) => getAssignmentClientLabel(item))
+              : [getAssignmentClientLabel(context.assignment)],
+          )
+          .filter((label) => label && label !== '-'),
+      ),
+    );
+  }, [monthlyReportContexts]);
+
+  const clientLabel = getAssignmentClientLabel(assignment);
+
+  function handleExportCsv() {
+    if (!report) {
+      return;
+    }
+
+    const assignmentsById = new Map(
+      reportAssignments.map((reportAssignment) => [
+        Number(reportAssignment.id),
+        reportAssignment,
+      ]),
+    );
+    const periodLabel = monthTitleFormatter.format(
+      new Date(report.year, report.month - 1, 1),
+    );
+
+    exportRowsToCsv(
+      `cra-${slugify(periodLabel)}.csv`,
+      [
+        { key: 'periode', label: 'Période' },
+        { key: 'date', label: 'Date' },
+        { key: 'jour', label: 'Jour' },
+        { key: 'mission', label: 'Mission' },
+        { key: 'client', label: 'Client' },
+        { key: 'temps', label: 'Temps' },
+        { key: 'prestataire', label: 'Prestataire' },
+      ],
+      [...lines]
+        .sort((first, second) => {
+          if (Number(first.day) !== Number(second.day)) {
+            return Number(first.day) - Number(second.day);
+          }
+
+          return Number(first.assignments_id) - Number(second.assignments_id);
+        })
+        .map((line) => {
+          const lineAssignment = assignmentsById.get(Number(line.assignments_id));
+          const date = new Date(report.year, report.month - 1, Number(line.day));
+
+          return {
+            periode: periodLabel,
+            date: dayDateFormatter.format(date),
+            jour: line.day,
+            mission: lineAssignment?.label || `Mission #${line.assignments_id}`,
+            client: getAssignmentClientLabel(lineAssignment),
+            temps: formatSummaryDays(line.past_day),
+            prestataire: fullName,
+          };
+        }),
+    );
+  }
 
   function handleUnauthorized() {
     localStorage.removeItem('authSession');
@@ -194,13 +463,19 @@ export default function CompteRenduDetail() {
   }
 
   async function handleDayClick(day) {
-    if (!session?.token || !report?.id || !report?.assignments_id || pendingDay === day) {
+    if (!session?.token || !report?.id || !selectedAssignmentId || pendingDay === day) {
       return;
     }
 
-    const currentLine = linesByDay.get(day);
+    const currentLine = selectedLinesByDay.get(day);
     const currentValue = Number(currentLine?.past_day ?? 0);
+    const dayTotal = Number(dayTotals.get(day) ?? 0);
     const nextValue = currentValue === 0 ? 0.5 : currentValue === 0.5 ? 1 : 0;
+
+    if (nextValue > currentValue && dayTotal - currentValue + nextValue > 1) {
+      setErrorMessage('Le total saisi sur une journée ne peut pas dépasser 1 j.');
+      return;
+    }
 
     setPendingDay(day);
     setErrorMessage('');
@@ -217,7 +492,7 @@ export default function CompteRenduDetail() {
             day,
             past_day: nextValue,
             activity_reports_id: report.id,
-            assignments_id: report.assignments_id,
+            assignments_id: Number(selectedAssignmentId),
           }),
         });
 
@@ -314,22 +589,28 @@ export default function CompteRenduDetail() {
           <div className="cr-nav-section">
             <h3 className="cr-nav-title">MENU</h3>
             <ul className="cr-nav-list">
-              <li className="cr-nav-item active">
-                <a href="/compte-rendu" className="cr-nav-link">
+              <li className="cr-nav-item">
+                <a href="/clients" className="cr-nav-link">
                   <span className="cr-nav-icon"></span>
-                  <span>CRA</span>
+                  <span>Clients</span>
                 </a>
               </li>
-              <li className="cr-nav-item">
+              <li className="cr-nav-item active">
                 <a href="/missions" className="cr-nav-link">
                   <span className="cr-nav-icon"></span>
                   <span>Missions</span>
                 </a>
               </li>
               <li className="cr-nav-item">
-                <a href="/clients" className="cr-nav-link">
+                <a href="/compte-rendu" className="cr-nav-link">
                   <span className="cr-nav-icon"></span>
-                  <span>Clients</span>
+                  <span>CRA</span>
+                </a>
+              </li>
+              <li className="cr-nav-item">
+                <a href="#" className="cr-nav-link">
+                  <span className="cr-nav-icon"></span>
+                  <span>Notes de frais</span>
                 </a>
               </li>
             </ul>
@@ -370,14 +651,24 @@ export default function CompteRenduDetail() {
               {report ? monthTitleFormatter.format(new Date(report.year, report.month - 1, 1)) : ''}
             </p>
           </div>
-          <div className="cr-user-info">
-            <div className="cr-user-details">
-              <span className="cr-user-name">{fullName}</span>
-              <span className="cr-user-email">{email}</span>
+          <div className="cr-detail-header-actions">
+            <button
+              type="button"
+              className="cr-btn cr-btn-outline cr-detail-export-btn"
+              onClick={handleExportCsv}
+              disabled={!report || lines.length === 0}
+            >
+              Exporter (.csv)
+            </button>
+            <div className="cr-user-info">
+              <div className="cr-user-details">
+                <span className="cr-user-name">{fullName}</span>
+                <span className="cr-user-email">{email}</span>
+              </div>
+              <a href="/profile" className="cr-user-badge-link" title="Profil">
+                <div className="cr-user-avatar">{initials}</div>
+              </a>
             </div>
-            <a href="/profile" className="cr-user-badge-link" title="Profil">
-              <div className="cr-user-avatar">{initials}</div>
-            </a>
           </div>
         </header>
 
@@ -388,12 +679,26 @@ export default function CompteRenduDetail() {
           <section className="cr-detail-shell">
             <div className="cr-detail-summary">
               <div className="cr-detail-card">
-                <span className="cr-detail-label">Mission</span>
-                <strong>{assignment?.label ?? report.assignment?.label ?? '-'}</strong>
+                <span className="cr-detail-label">Missions</span>
+                <strong>
+                  {monthlyMissions.length > 1
+                    ? `${monthlyMissions.length} missions`
+                    : assignment?.label ?? report.assignment?.label ?? '-'}
+                </strong>
+                {monthlyMissions.length > 1 ? (
+                  <span className="cr-detail-card-note">{monthlyMissions.join(', ')}</span>
+                ) : null}
               </div>
               <div className="cr-detail-card">
-                <span className="cr-detail-label">Client</span>
-                <strong>{clientLabel}</strong>
+                <span className="cr-detail-label">Clients</span>
+                <strong>
+                  {monthlyClients.length > 1
+                    ? `${monthlyClients.length} clients`
+                    : monthlyClients[0] ?? clientLabel}
+                </strong>
+                {monthlyClients.length > 1 ? (
+                  <span className="cr-detail-card-note">{monthlyClients.join(', ')}</span>
+                ) : null}
               </div>
               <div className="cr-detail-card">
                 <span className="cr-detail-label">Prestataire</span>
@@ -406,6 +711,22 @@ export default function CompteRenduDetail() {
             </div>
 
             <div className="cr-calendar-card">
+              <div className="cr-assignment-picker">
+                <span className="cr-assignment-picker-label">Mission à renseigner</span>
+                <div className="cr-assignment-picker-options">
+                  {reportAssignments.map((item) => (
+                    <button
+                      type="button"
+                      key={item.id}
+                      className={`cr-assignment-chip ${String(item.id) === selectedAssignmentId ? 'active' : ''}`}
+                      onClick={() => setSelectedAssignmentId(String(item.id))}
+                    >
+                      <strong>{item.label || `Mission #${item.id}`}</strong>
+                      <small>{getAssignmentClientLabel(item)}</small>
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="cr-calendar-head">
                 {weekdayLabels.map((label) => (
                   <span key={label} className="cr-calendar-weekday">
@@ -413,25 +734,80 @@ export default function CompteRenduDetail() {
                   </span>
                 ))}
               </div>
-              <div className="cr-calendar-grid">
-                {calendarCells.map((day, index) => {
-                  if (!day) {
-                    return <div key={`empty-${index}`} className="cr-calendar-cell empty" />;
-                  }
-
-                  const line = linesByDay.get(day);
-                  const pastDay = Number(line?.past_day ?? 0);
+              <div className="cr-calendar-weeks">
+                {calendarWeeks.map((week, weekIndex) => {
+                  const summaries = Array.from(
+                    weeklyMissionSummaries.get(weekIndex)?.values() ?? [],
+                  ).sort((first, second) => first.mission.localeCompare(second.mission));
 
                   return (
-                    <button
-                      type="button"
-                      key={day}
-                      className={`cr-calendar-cell ${pastDay ? 'filled' : ''} ${pendingDay === day ? 'is-pending' : ''}`}
-                      onClick={() => handleDayClick(day)}
-                    >
-                      <span className="cr-calendar-day">{day}</span>
-                      <span className="cr-calendar-value">{formatPastDay(pastDay)}</span>
-                    </button>
+                    <div className="cr-calendar-week" key={`week-${weekIndex}`}>
+                      <div className="cr-calendar-grid">
+                        {week.map((day, index) => {
+                          if (!day) {
+                            return (
+                              <div
+                                key={`empty-${weekIndex}-${index}`}
+                                className="cr-calendar-cell empty"
+                              />
+                            );
+                          }
+
+                          const selectedLine = selectedLinesByDay.get(day);
+                          const selectedPastDay = Number(selectedLine?.past_day ?? 0);
+                          const dayTotal = Number(dayTotals.get(day) ?? 0);
+
+                          return (
+                            <button
+                              type="button"
+                              key={day}
+                              className={`cr-calendar-cell ${dayTotal ? 'filled' : ''} ${selectedPastDay ? 'is-selected-mission' : ''} ${pendingDay === day ? 'is-pending' : ''}`}
+                              onClick={() => handleDayClick(day)}
+                            >
+                              <span className="cr-calendar-day">{day}</span>
+                              <span className="cr-calendar-value">
+                                {formatPastDay(dayTotal)}
+                              </span>
+                              {selectedPastDay ? (
+                                <span className="cr-calendar-selected-value">
+                                  Mission: {formatPastDay(selectedPastDay)}
+                                </span>
+                              ) : null}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <div className="cr-week-summary">
+                        <div className="cr-week-summary-header">
+                          <span>Semaine {weekIndex + 1}</span>
+                          <strong>{getWeekRangeLabel(week)}</strong>
+                        </div>
+
+                        {summaries.length ? (
+                          <div className="cr-week-missions">
+                            {summaries.map((summary) => (
+                              <button
+                                key={summary.assignmentId}
+                                type="button"
+                                onClick={() => setSelectedAssignmentId(String(summary.assignmentId))}
+                                className={`cr-week-mission ${String(summary.assignmentId) === selectedAssignmentId ? 'is-current' : ''}`}
+                              >
+                                <span className="cr-week-mission-main">
+                                  <strong>{summary.mission}</strong>
+                                  <small>{summary.client}</small>
+                                </span>
+                                <span className="cr-week-mission-days">
+                                  {formatSummaryDays(summary.total)}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="cr-week-empty">Aucune mission saisie cette semaine.</p>
+                        )}
+                      </div>
+                    </div>
                   );
                 })}
               </div>

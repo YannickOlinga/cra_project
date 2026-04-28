@@ -1,4 +1,12 @@
-import { IsInt, IsNotEmpty, Max, Min } from 'class-validator';
+import {
+  ArrayNotEmpty,
+  IsArray,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  Max,
+  Min,
+} from 'class-validator';
 
 export class CreateActivityReportDto {
   @IsNotEmpty()
@@ -12,7 +20,13 @@ export class CreateActivityReportDto {
   @Min(2000)
   year: number;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsInt()
-  assignments_id: number;
+  assignments_id?: number;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsInt({ each: true })
+  assignment_ids?: number[];
 }

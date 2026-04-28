@@ -56,7 +56,8 @@
   font-weight: 700;
 }
 
-.assignment-field input {
+.assignment-field input,
+.assignment-field select {
   width: 100%;
   box-sizing: border-box;
   padding: 0.9rem 1rem;
@@ -67,10 +68,20 @@
   font-size: 0.98rem;
 }
 
-.assignment-field input:focus {
+.assignment-field select {
+  appearance: none;
+}
+
+.assignment-field input:focus,
+.assignment-field select:focus {
   outline: none;
   border-color: #31bf68;
   box-shadow: 0 0 0 3px rgba(49, 191, 104, 0.14);
+}
+
+.assignment-field select:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 
 .assignment-modal-error {

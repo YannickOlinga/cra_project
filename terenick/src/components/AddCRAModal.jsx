@@ -12,7 +12,7 @@ export default function AddCRAModal({ isOpen, onClose, onGenerate }) {
   const [formData, setFormData] = useState({
     periode: new Date().toISOString().slice(0, 7),
     prestataire: '',
-    mission: '',
+    missions: [],
   });
 
   useEffect(() => {
@@ -73,9 +73,9 @@ export default function AddCRAModal({ isOpen, onClose, onGenerate }) {
         setAssignments(nextAssignments);
         setFormData((current) => ({
           ...current,
-          mission:
-            current.mission ||
-            (nextAssignments[0] ? String(nextAssignments[0].id) : ''),
+          missions: current.missions.filter((missionId) =>
+            nextAssignments.some((assignment) => String(assignment.id) === missionId),
+          ),
         }));
       } catch (error) {
         if (!isCancelled) {
@@ -115,9 +115,18 @@ export default function AddCRAModal({ isOpen, onClose, onGenerate }) {
     setFormData({ ...formData, periode: e.target.value });
   };
 
-  const handleMissionChange = (e) => {
+  const handleMissionToggle = (missionId) => {
     setFormError('');
-    setFormData({ ...formData, mission: e.target.value });
+    setFormData((current) => {
+      const isSelected = current.missions.includes(missionId);
+
+      return {
+        ...current,
+        missions: isSelected
+          ? current.missions.filter((selectedMissionId) => selectedMissionId !== missionId)
+          : [...current.missions, missionId],
+      };
+    });
   };
 
   const handleGenerate = async () => {
@@ -126,7 +135,7 @@ export default function AddCRAModal({ isOpen, onClose, onGenerate }) {
       return;
     }
 
-    if (!formData.periode || !formData.mission) {
+    if (!formData.periode || formData.missions.length === 0) {
       setFormError('Veuillez remplir toutes les étapes.');
       return;
     }
@@ -141,6 +150,7 @@ export default function AddCRAModal({ isOpen, onClose, onGenerate }) {
     setFormError('');
 
     try {
+      const selectedAssignmentIds = formData.missions.map(Number);
       const response = await fetch(`${apiBaseUrl}/activity-reports`, {
         method: 'POST',
         headers: {
@@ -150,7 +160,8 @@ export default function AddCRAModal({ isOpen, onClose, onGenerate }) {
         body: JSON.stringify({
           month,
           year,
-          assignments_id: Number(formData.mission),
+          assignments_id: selectedAssignmentIds[0],
+          assignment_ids: selectedAssignmentIds,
         }),
       });
 
@@ -162,12 +173,13 @@ export default function AddCRAModal({ isOpen, onClose, onGenerate }) {
         throw new Error(message);
       }
 
-      const selectedAssignment =
-        assignments.find((assignment) => String(assignment.id) === formData.mission) ?? null;
+      const selectedAssignments = assignments.filter((assignment) =>
+        formData.missions.includes(String(assignment.id)),
+      );
 
       onGenerate?.({
         report: data,
-        assignment: selectedAssignment,
+        assignments: selectedAssignments,
       });
       onClose();
     } catch (error) {
@@ -218,24 +230,39 @@ export default function AddCRAModal({ isOpen, onClose, onGenerate }) {
 
           {/* Étape 3 */}
           <div className="step">
-            <h3>Étape 3: Sélectionnez la mission liée à votre CRA.</h3>
-            <select 
-              className="form-select"
-              value={formData.mission}
-              onChange={handleMissionChange}
-              disabled={isLoadingAssignments || assignments.length === 0}
-            >
-              <option value="">
-                {isLoadingAssignments
-                  ? 'Chargement des missions...'
-                  : 'Sélectionnez une mission'}
-              </option>
-              {assignments.map((assignment) => (
-                <option key={assignment.id} value={assignment.id}>
-                  {assignment.label || `Mission #${assignment.id}`}
-                </option>
-              ))}
-            </select>
+            <h3>Étape 3: Sélectionnez les missions liées à vos CRA.</h3>
+            {isLoadingAssignments ? (
+              <p className="missions-helper">Chargement des missions...</p>
+            ) : assignments.length > 0 ? (
+              <div className="cra-mission-list">
+                {assignments.map((assignment) => {
+                  const missionId = String(assignment.id);
+                  const isChecked = formData.missions.includes(missionId);
+                  const clientLabel =
+                    assignment.customer?.company ||
+                    `${assignment.customer?.user?.first_name ?? ''} ${assignment.customer?.user?.last_name ?? ''}`.trim();
+
+                  return (
+                    <label
+                      key={assignment.id}
+                      className={`cra-mission-option ${isChecked ? 'selected' : ''}`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => handleMissionToggle(missionId)}
+                      />
+                      <span className="cra-mission-copy">
+                        <strong>{assignment.label || `Mission #${assignment.id}`}</strong>
+                        {clientLabel ? <small>{clientLabel}</small> : null}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="missions-helper">Aucune mission disponible.</p>
+            )}
           </div>
           {formError ? <p className="modal-error">{formError}</p> : null}
         </div>

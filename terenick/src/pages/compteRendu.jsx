@@ -15,6 +15,66 @@ function formatReportPeriod(month, year) {
   return monthFormatter.format(new Date(year, month - 1, 1));
 }
 
+function formatDays(value) {
+  return `${Number(value).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} j.`;
+}
+
+function buildActivityGroups(activities) {
+  const groups = new Map();
+
+  activities.forEach((activity) => {
+    const groupKey = `${activity.year}-${activity.month}`;
+    const activityReportIds = activity.reportIds?.length
+      ? activity.reportIds
+      : [activity.id];
+    const activityMissionNames = activity.missionNames?.length
+      ? activity.missionNames
+      : [activity.mission];
+    const existing = groups.get(groupKey) ?? {
+      id: activity.id,
+      reportIds: [],
+      periode: activity.periode,
+      missionNames: [],
+      prestataire: activity.prestataire,
+      totalValue: 0,
+      etat: activity.etat,
+      etatClass: activity.etatClass,
+      month: activity.month,
+      year: activity.year,
+    };
+
+    groups.set(groupKey, {
+      ...existing,
+      id: Math.min(existing.id, ...activityReportIds),
+      reportIds: [...existing.reportIds, ...activityReportIds],
+      missionNames: [...existing.missionNames, ...activityMissionNames],
+      totalValue: existing.totalValue + Number(activity.totalValue || 0),
+    });
+  });
+
+  return Array.from(groups.values())
+    .map((group) => {
+      const uniqueMissionNames = Array.from(new Set(group.missionNames));
+
+      return {
+        ...group,
+        mission:
+          uniqueMissionNames.length === 1
+            ? uniqueMissionNames[0]
+            : `${uniqueMissionNames.length} missions`,
+        missionNames: uniqueMissionNames,
+        tempsTotal: formatDays(group.totalValue),
+      };
+    })
+    .sort((first, second) => {
+      if (first.year !== second.year) {
+        return second.year - first.year;
+      }
+
+      return second.month - first.month;
+    });
+}
+
 export default function CompteRendu() {
   const [session, setSession] = useState(null);
   const [activities, setActivities] = useState([]);
@@ -60,6 +120,19 @@ export default function CompteRendu() {
           return;
         }
 
+        const assignmentsResponse = await fetch(`${apiBaseUrl}/assignments`, {
+          headers: {
+            Authorization: `Bearer ${session.token}`,
+          },
+        });
+        const assignmentsData = await assignmentsResponse.json().catch(() => []);
+        const assignmentsById = new Map(
+          (Array.isArray(assignmentsData) ? assignmentsData : []).map((assignment) => [
+            Number(assignment.id),
+            assignment,
+          ]),
+        );
+
         const providerLabel =
           `${session?.user?.first_name ?? ''} ${session?.user?.last_name ?? ''}`.trim() ||
           'Prestataire';
@@ -86,33 +159,48 @@ export default function CompteRendu() {
                 0,
               );
 
-              return [
-                report.id,
-                `${total.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} j.`,
-              ];
+              return [report.id, total];
             } catch {
-              return [report.id, '0 j.'];
+              return [report.id, 0];
             }
           }),
         );
 
         const totalsMap = Object.fromEntries(totalsEntries);
 
-        setActivities(
-          data.map((report) => ({
+        const nextActivities = data.map((report) => {
+          const assignmentIds = Array.from(
+            new Set([
+              ...(report.assignment_ids ?? []),
+              ...(report.assignments_id ? [report.assignments_id] : []),
+            ].map(Number).filter(Boolean)),
+          );
+          const missionNames = assignmentIds.map((assignmentId) => {
+            const assignment = assignmentsById.get(assignmentId);
+            return assignment?.label || `Mission #${assignmentId}`;
+          });
+
+          return {
             id: report.id,
             periode: formatReportPeriod(report.month, report.year),
             mission:
-              report.assignment?.label ||
-              `Mission #${report.assignments_id ?? report.assignment?.id ?? report.id}`,
+              missionNames.length > 1
+                ? `${missionNames.length} missions`
+                : missionNames[0] ||
+                  report.assignment?.label ||
+                  `Mission #${report.assignments_id ?? report.assignment?.id ?? report.id}`,
+            missionNames,
             prestataire: providerLabel,
-            tempsTotal: totalsMap[report.id] ?? '0 j.',
+            totalValue: totalsMap[report.id] ?? 0,
+            tempsTotal: formatDays(totalsMap[report.id] ?? 0),
             etat: 'CRA créé',
             etatClass: 'in-progress',
             month: report.month,
             year: report.year,
-          })),
-        );
+          };
+        });
+
+        setActivities(buildActivityGroups(nextActivities));
         setReportTotals(totalsMap);
       } catch {
         if (!isCancelled) {
@@ -142,35 +230,49 @@ export default function CompteRendu() {
     window.location.href = '/login';
   }
 
-  async function handleDeleteReport(reportId) {
+  async function handleDeleteReport(activity) {
     if (!session?.token) {
       return;
     }
 
-    const confirmed = window.confirm('Supprimer ce CRA ?');
+    const reportIds = activity.reportIds?.length ? activity.reportIds : [activity.id];
+    const confirmed = window.confirm(
+      reportIds.length > 1
+        ? 'Supprimer tous les CRA de ce mois ?'
+        : 'Supprimer ce CRA ?',
+    );
     if (!confirmed) {
       return;
     }
 
     try {
-      const response = await fetch(`${apiBaseUrl}/activity-reports/${reportId}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${session.token}`,
-        },
-      });
+      const responses = await Promise.all(
+        reportIds.map((reportId) =>
+          fetch(`${apiBaseUrl}/activity-reports/${reportId}`, {
+            method: 'DELETE',
+            headers: {
+              Authorization: `Bearer ${session.token}`,
+            },
+          }),
+        ),
+      );
 
-      if (response.status === 401) {
+      if (responses.some((response) => response.status === 401)) {
         localStorage.removeItem('authSession');
         window.location.href = '/login';
         return;
       }
 
-      if (!response.ok) {
+      if (responses.some((response) => !response.ok)) {
         throw new Error('Impossible de supprimer le CRA.');
       }
 
-      setActivities((current) => current.filter((activity) => activity.id !== reportId));
+      setActivities((current) =>
+        current.filter(
+          (currentActivity) =>
+            !currentActivity.reportIds?.some((reportId) => reportIds.includes(reportId)),
+        ),
+      );
     } catch {
       window.alert('Impossible de supprimer le CRA.');
     }
@@ -188,7 +290,7 @@ export default function CompteRendu() {
       ],
       activities.map((activity) => ({
         periode: activity.periode,
-        mission: activity.mission,
+        mission: activity.missionNames?.join(' | ') ?? activity.mission,
         prestataire: activity.prestataire,
         tempsTotal: activity.tempsTotal,
         etat: activity.etat,
@@ -196,29 +298,51 @@ export default function CompteRendu() {
     );
   }
 
-  const handleCreateReport = ({ report, assignment }) => {
-    const missionLabel =
-      report?.assignment?.label ||
-      assignment?.label ||
-      `Mission #${report?.assignments_id ?? assignment?.id ?? ''}`;
+  const handleCreateReport = ({ report, assignment, assignments, reports }) => {
     const providerLabel =
       `${session?.user?.first_name ?? ''} ${session?.user?.last_name ?? ''}`.trim() ||
       'Prestataire';
+    const createdReports = reports ?? [{ report, assignment, assignments }];
+    const nextActivities = createdReports
+      .filter((createdReport) => createdReport.report?.id)
+      .map((createdReport) => {
+        const createdReportData = createdReport.report;
+        const createdAssignment = createdReport.assignment;
+        const createdAssignments = createdReport.assignments ?? [];
+        const missionNames = createdAssignments.length
+          ? createdAssignments.map(
+              (selectedAssignment) =>
+                selectedAssignment.label || `Mission #${selectedAssignment.id}`,
+            )
+          : [];
+        const missionLabel =
+          missionNames.length > 1
+            ? `${missionNames.length} missions`
+            : missionNames[0] ||
+          createdReportData?.assignment?.label ||
+          createdAssignment?.label ||
+          `Mission #${createdReportData?.assignments_id ?? createdAssignment?.id ?? ''}`;
 
-    setActivities((current) => [
-      {
-        id: report.id,
-        periode: formatReportPeriod(report.month, report.year),
-        mission: missionLabel,
-        prestataire: providerLabel,
-        tempsTotal: reportTotals[report.id] ?? '0 j.',
-        etat: 'CRA créé',
-        etatClass: 'in-progress',
-        month: report.month,
-        year: report.year,
-      },
-      ...current.filter((activity) => activity.id !== report.id),
-    ]);
+        return {
+          id: createdReportData.id,
+          periode: formatReportPeriod(createdReportData.month, createdReportData.year),
+          mission: missionLabel,
+          missionNames,
+          prestataire: providerLabel,
+          totalValue: reportTotals[createdReportData.id] ?? 0,
+          tempsTotal: formatDays(reportTotals[createdReportData.id] ?? 0),
+          etat: 'CRA créé',
+          etatClass: 'in-progress',
+          month: createdReportData.month,
+          year: createdReportData.year,
+        };
+      });
+
+    if (nextActivities.length === 0) {
+      return;
+    }
+
+    setActivities((current) => buildActivityGroups([...nextActivities, ...current]));
   };
 
   const activeCount = useMemo(() => activities.length, [activities.length]);
@@ -326,9 +450,6 @@ export default function CompteRendu() {
           <button className="cr-tab active">
             Actifs <span className="cr-tab-count">{activeCount}</span>
           </button>
-          <button className="cr-tab">
-            Traités <span className="cr-tab-count">0</span>
-          </button>
         </div>
 
         <div className="cr-table-controls">
@@ -336,10 +457,6 @@ export default function CompteRendu() {
             <button className="cr-btn cr-btn-outline" onClick={handleExportCsv}>
               Exporter (.csv)
             </button>
-            <div className="cr-view-toggle">
-              <button className="cr-view-btn active" aria-label="Vue tableau"></button>
-              <button className="cr-view-btn" aria-label="Vue liste"></button>
-            </div>
           </div>
         </div>
 
@@ -365,7 +482,12 @@ export default function CompteRendu() {
                   </td>
                   <td>
                     <Link to={`/compte-rendu/${activity.id}`} className="cr-report-link">
-                      {activity.mission}
+                      <span className="cr-report-mission-title">{activity.mission}</span>
+                      {activity.missionNames?.length > 1 ? (
+                        <span className="cr-report-mission-list">
+                          {activity.missionNames.join(', ')}
+                        </span>
+                      ) : null}
                     </Link>
                   </td>
                   <td>{activity.prestataire}</td>
@@ -394,7 +516,7 @@ export default function CompteRendu() {
                       <button
                         className="cr-action-btn cr-action-btn-danger"
                         title="Supprimer"
-                        onClick={() => handleDeleteReport(activity.id)}
+                        onClick={() => handleDeleteReport(activity)}
                       >
                         <span className="cr-trash-icon" />
                       </button>

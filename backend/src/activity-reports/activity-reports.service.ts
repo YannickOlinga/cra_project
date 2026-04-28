@@ -2,11 +2,10 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
-  ConflictException,
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindOptionsWhere, Repository } from 'typeorm';
 import { CreateActivityReportDto } from './dto/create-activity-report.dto';
 import { UpdateActivityReportDto } from './dto/update-activity-report.dto';
 import { ActivityReport } from './entities/activity-report.entity';
@@ -33,46 +32,72 @@ export class ActivityReportsService {
       );
     }
 
-    const assignment = await this.assignmentsRepository.findOne({
-      where: { id: createActivityReportDto.assignments_id },
-    });
+    const assignmentIds = Array.from(
+      new Set([
+        ...(createActivityReportDto.assignment_ids ?? []),
+        ...(createActivityReportDto.assignments_id
+          ? [createActivityReportDto.assignments_id]
+          : []),
+      ]),
+    );
 
-    if (!assignment) {
-      throw new NotFoundException('Assignment not found.');
+    if (assignmentIds.length === 0) {
+      throw new BadRequestException(
+        'At least one assignment is required to create an activity report.',
+      );
     }
 
-    if (assignment.providers_id !== authUser.profileId) {
+    const assignments = await this.assignmentsRepository.find({
+      where: assignmentIds.map((id) => ({ id })),
+    });
+
+    if (assignments.length !== assignmentIds.length) {
+      throw new NotFoundException('One or more assignments were not found.');
+    }
+
+    const hasForeignAssignment = assignments.some(
+      (assignment) => assignment.providers_id !== authUser.profileId,
+    );
+
+    if (hasForeignAssignment) {
       throw new BadRequestException(
         'You can only create an activity report for your own assignments.',
       );
     }
 
-    // One provider can only have one report per assignment and month/year.
+    // One provider has one monthly CRA. Missions are attached to that report.
     const existingReport = await this.activityReportsRepository.findOne({
       where: {
         month: createActivityReportDto.month,
         year: createActivityReportDto.year,
         providers_id: authUser.profileId,
-        assignments_id: createActivityReportDto.assignments_id,
       },
     });
 
     if (existingReport) {
-      throw new ConflictException(
-        'An activity report already exists for this assignment, month and year.',
+      const existingAssignmentIds = this.getReportAssignmentIds(existingReport);
+      existingReport.assignment_ids = Array.from(
+        new Set([...existingAssignmentIds, ...assignmentIds]),
       );
+      existingReport.assignments_id =
+        existingReport.assignments_id ?? existingReport.assignment_ids[0] ?? null;
+
+      return this.activityReportsRepository.save(existingReport);
     }
 
     const activityReport = this.activityReportsRepository.create({
-      ...createActivityReportDto,
+      month: createActivityReportDto.month,
+      year: createActivityReportDto.year,
       providers_id: authUser.profileId,
+      assignments_id: assignmentIds[0] ?? null,
+      assignment_ids: assignmentIds,
     });
 
     return this.activityReportsRepository.save(activityReport);
   }
 
   async findAll(authUser: AuthenticatedUser) {
-    const whereCondition: Partial<ActivityReport> = {};
+    const whereCondition: FindOptionsWhere<ActivityReport> = {};
     if (authUser.role === AccountRole.Provider) {
       whereCondition['providers_id'] = authUser.profileId;
     }
@@ -117,6 +142,44 @@ export class ActivityReportsService {
     }
 
     Object.assign(report, updateActivityReportDto);
+
+    if (
+      updateActivityReportDto.assignment_ids ||
+      updateActivityReportDto.assignments_id
+    ) {
+      const assignmentIds = Array.from(
+        new Set([
+          ...(updateActivityReportDto.assignment_ids ?? []),
+          ...(updateActivityReportDto.assignments_id
+            ? [updateActivityReportDto.assignments_id]
+            : []),
+        ]),
+      );
+
+      if (assignmentIds.length > 0) {
+        const assignments = await this.assignmentsRepository.find({
+          where: assignmentIds.map((assignmentId) => ({ id: assignmentId })),
+        });
+
+        if (assignments.length !== assignmentIds.length) {
+          throw new NotFoundException('One or more assignments were not found.');
+        }
+
+        const hasForeignAssignment = assignments.some(
+          (assignment) => assignment.providers_id !== authUser.profileId,
+        );
+
+        if (hasForeignAssignment) {
+          throw new BadRequestException(
+            'You can only attach your own assignments to an activity report.',
+          );
+        }
+
+        report.assignment_ids = assignmentIds;
+        report.assignments_id = assignmentIds[0];
+      }
+    }
+
     return this.activityReportsRepository.save(report);
   }
 
@@ -128,5 +191,14 @@ export class ActivityReportsService {
     }
 
     return this.activityReportsRepository.remove(report);
+  }
+
+  private getReportAssignmentIds(report: ActivityReport): number[] {
+    return Array.from(
+      new Set([
+        ...(report.assignment_ids ?? []),
+        ...(report.assignments_id ? [report.assignments_id] : []),
+      ]),
+    );
   }
 }

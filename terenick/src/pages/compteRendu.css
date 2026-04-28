@@ -357,6 +357,8 @@
 }
 
 .cr-report-link {
+  display: grid;
+  gap: 0.25rem;
   color: #30435b;
   font-weight: 700;
   text-decoration: none;
@@ -364,6 +366,20 @@
 
 .cr-report-link:hover {
   color: #2c3e50;
+}
+
+.cr-report-mission-title,
+.cr-report-mission-list {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cr-report-mission-list {
+  max-width: 360px;
+  color: #7a8795;
+  font-size: 0.84rem;
+  font-weight: 600;
 }
 
 .cr-status {

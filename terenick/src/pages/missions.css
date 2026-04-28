@@ -218,6 +218,11 @@
   cursor: pointer;
 }
 
+.missions-delete-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .missions-trash {
   position: relative;
   width: 1rem;

@@ -11,6 +11,7 @@ export default function Missions() {
   const [session, setSession] = useState(null);
   const [missionRows, setMissionRows] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [deletingMissionId, setDeletingMissionId] = useState(null);
 
   useEffect(() => {
     const storedSession = localStorage.getItem('authSession');
@@ -83,6 +84,57 @@ export default function Missions() {
   function handleLogout() {
     localStorage.removeItem('authSession');
     window.location.href = '/login';
+  }
+
+  async function handleDeleteMission(mission) {
+    if (!session?.token || deletingMissionId) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Supprimer la mission "${mission.label || `mission ${mission.id}`}" ?`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingMissionId(mission.id);
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/assignments/${mission.id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${session.token}`,
+        },
+      });
+
+      if (response.status === 401) {
+        localStorage.removeItem('authSession');
+        window.location.href = '/login';
+        return;
+      }
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        const message = Array.isArray(data?.message)
+          ? data.message.join(', ')
+          : data?.message ?? 'Impossible de supprimer la mission.';
+        throw new Error(message);
+      }
+
+      setMissionRows((current) =>
+        current.filter((currentMission) => currentMission.id !== mission.id),
+      );
+    } catch (error) {
+      window.alert(
+        error instanceof Error
+          ? error.message
+          : 'Impossible de supprimer la mission.',
+      );
+    } finally {
+      setDeletingMissionId(null);
+    }
   }
 
   function handleExportCsv() {
@@ -244,7 +296,13 @@ export default function Missions() {
                     </td>
                     <td>
                       <div className="missions-actions-cell">
-                        <button type="button" className="missions-delete-btn" title="Supprimer">
+                        <button
+                          type="button"
+                          className="missions-delete-btn"
+                          title="Supprimer"
+                          disabled={deletingMissionId === mission.id}
+                          onClick={() => handleDeleteMission(mission)}
+                        >
                           <span className="missions-trash" />
                         </button>
                       </div>

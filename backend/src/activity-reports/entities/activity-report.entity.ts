@@ -23,14 +23,38 @@ export class ActivityReport {
   @Column({ type: 'int', name: 'providers_id' })
   providers_id: number;
 
-  @Column({ type: 'int', name: 'assignments_id' })
-  assignments_id: number;
+  @Column({ type: 'int', name: 'assignments_id', nullable: true })
+  assignments_id?: number | null;
+
+  @Column('simple-array', {
+    name: 'assignment_ids',
+    nullable: true,
+    transformer: {
+      to: (value?: number[] | null) => (value?.length ? value : null),
+      from: (value?: string[] | string | null) => {
+        if (Array.isArray(value)) {
+          return value.map(Number).filter(Boolean);
+        }
+
+        if (typeof value === 'string') {
+          return value.split(',').map(Number).filter(Boolean);
+        }
+
+        return [];
+      },
+    },
+  })
+  assignment_ids?: number[];
 
   @ManyToOne(() => Provider, { onDelete: 'CASCADE', onUpdate: 'CASCADE' })
   @JoinColumn({ name: 'providers_id' })
   provider: Relation<Provider>;
 
-  @ManyToOne(() => Assignment, { onDelete: 'CASCADE', onUpdate: 'CASCADE' })
+  @ManyToOne(() => Assignment, {
+    nullable: true,
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE',
+  })
   @JoinColumn({ name: 'assignments_id' })
-  assignment: Relation<Assignment>;
+  assignment?: Relation<Assignment> | null;
 }
