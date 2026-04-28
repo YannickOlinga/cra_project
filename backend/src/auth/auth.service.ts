@@ -116,10 +116,18 @@ export class AuthService {
         user_id: user.id,
       });
 
+      const payload: AuthenticatedUser = {
+        sub: user.id,
+        email: user.email,
+        role: AccountRole.Customer,
+        profileId: customer.id,
+      };
+
       return {
+        access_token: await this.jwtService.signAsync(payload),
         role: AccountRole.Customer,
         user,
-        customer,
+        profile: customer,
       };
     }
 
@@ -127,10 +135,18 @@ export class AuthService {
       user_id: user.id,
     });
 
+    const payload: AuthenticatedUser = {
+      sub: user.id,
+      email: user.email,
+      role: AccountRole.Provider,
+      profileId: provider.id,
+    };
+
     return {
+      access_token: await this.jwtService.signAsync(payload),
       role: AccountRole.Provider,
       user,
-      provider,
+      profile: provider,
     };
   }
 
