@@ -121,7 +121,7 @@ function SignupProvider() {
       resetRecaptchaV2(recaptchaWidgetIdRef.current);
 
       window.setTimeout(() => {
-        navigate('/dashboard');
+        navigate('/compte-rendu');
       }, 1200);
     } catch (error) {
       const message =

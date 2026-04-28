@@ -375,7 +375,7 @@ export default function CompteRenduDetail() {
               <span className="cr-user-name">{fullName}</span>
               <span className="cr-user-email">{email}</span>
             </div>
-            <a href="/dashboard" className="cr-user-badge-link" title="Dashboard">
+            <a href="/profile" className="cr-user-badge-link" title="Profil">
               <div className="cr-user-avatar">{initials}</div>
             </a>
           </div>
