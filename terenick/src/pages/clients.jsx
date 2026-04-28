@@ -199,7 +199,7 @@ export default function Clients() {
               <span className="cr-user-name">{profile.fullName}</span>
               <span className="cr-user-email">{profile.email}</span>
             </div>
-            <a href="/dashboard" className="cr-user-badge-link" title="Dashboard">
+            <a href="/profile" className="cr-user-badge-link" title="Profil">
               <span className="cr-user-avatar">{profile.initials}</span>
             </a>
           </div>

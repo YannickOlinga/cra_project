@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import './login.css';
@@ -12,6 +12,17 @@ function Login() {
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  useEffect(() => {
+    try {
+      const session = JSON.parse(localStorage.getItem('authSession') ?? 'null');
+      if (session?.token) {
+        navigate('/compte-rendu', { replace: true });
+      }
+    } catch {
+      localStorage.removeItem('authSession');
+    }
+  }, [navigate]);
+
   async function handleSubmit(event) {
     event.preventDefault();
     setErrorMessage('');
@@ -24,7 +35,7 @@ function Login() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email,
+          email: email.trim(),
           password,
         }),
       });
@@ -65,6 +76,7 @@ function Login() {
               placeholder="Email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
+              autoComplete="email"
               required
             />
             <input
@@ -73,6 +85,7 @@ function Login() {
               placeholder="Mot de passe"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
+              autoComplete="current-password"
               required
               minLength={8}
             />

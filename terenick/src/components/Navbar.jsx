@@ -82,7 +82,7 @@ export default function Navbar() {
         {/* Bouton Desktop */}
         {session ? (
             <div className="desktop-only user-actions">
-                <a href="/profile" className="user-badge-link" title="Dashboard">
+                <a href="/profile" className="user-badge-link" title="Profil">
                     <div className="user-badge">
                         {initials}
                     </div>
@@ -116,7 +116,7 @@ export default function Navbar() {
                 <li className="mobile-button">
                     {session ? (
                         <div className="mobile-user-actions">
-                            <a href="/dashboard" onClick={closeMobileMenu} className="user-badge-link">
+                            <a href="/profile" onClick={closeMobileMenu} className="user-badge-link">
                                 <div className="user-badge mobile-user-badge">{initials}</div>
                             </a>
                             <button type="button" className="logout-button mobile-logout-button" onClick={handleLogout}>
