@@ -1,6 +1,8 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
-import { OneToOne, JoinColumn } from 'typeorm';
+import { OneToOne, JoinColumn, ManyToOne } from 'typeorm';
+import { Provider } from '../../providers/entities/provider.entity';
+import type { Relation } from 'typeorm';
 
 @Entity('customers')
 export class Customer {
@@ -16,4 +18,8 @@ export class Customer {
   @OneToOne(() => User, { eager: true, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'users_id' })
   user!: User;
+
+  @ManyToOne(() => Provider, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'providers_id' })
+  provider?: Relation<Provider> | null;
 }

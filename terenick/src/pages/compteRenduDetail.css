@@ -22,6 +22,17 @@
   text-transform: capitalize;
 }
 
+.cr-detail-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.cr-detail-export-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .cr-detail-shell {
   display: grid;
   gap: 1.5rem;
@@ -56,12 +67,81 @@
 }
 
 .cr-detail-card strong {
+  display: block;
   color: #30435b;
   font-size: 1.18rem;
 }
 
+.cr-detail-card-note {
+  display: block;
+  overflow: hidden;
+  margin-top: 0.4rem;
+  color: #7a8795;
+  font-size: 0.86rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .cr-calendar-card {
   overflow: hidden;
+}
+
+.cr-assignment-picker {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1.1rem 1.15rem;
+  border-bottom: 1px solid #edf2f7;
+  background: #fbfcfd;
+}
+
+.cr-assignment-picker-label {
+  color: #5c6c7d;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.cr-assignment-picker-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.cr-assignment-chip {
+  display: grid;
+  gap: 0.2rem;
+  max-width: 260px;
+  padding: 0.75rem 0.95rem;
+  border: 1px solid #dce5ee;
+  border-radius: 12px;
+  background: #fff;
+  color: #2c3e50;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cr-assignment-chip.active {
+  border-color: rgba(23, 130, 75, 0.35);
+  background: #f0fbf5;
+  box-shadow: 0 0 0 3px rgba(23, 130, 75, 0.08);
+}
+
+.cr-assignment-chip strong,
+.cr-assignment-chip small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cr-assignment-chip strong {
+  font-size: 0.92rem;
+}
+
+.cr-assignment-chip small {
+  color: #6f7d8d;
+  font-weight: 700;
 }
 
 .cr-calendar-head {
@@ -84,6 +164,10 @@
 .cr-calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.cr-calendar-week:not(:last-child) {
+  border-bottom: 1px solid #dfe7f0;
 }
 
 .cr-calendar-cell {
@@ -143,6 +227,116 @@
   color: #17824b;
 }
 
+.cr-calendar-cell.is-selected-mission {
+  outline: 2px solid rgba(23, 130, 75, 0.22);
+  outline-offset: -2px;
+}
+
+.cr-calendar-selected-value {
+  color: #2c3e50;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.cr-week-summary {
+  padding: 1rem 1.15rem 1.15rem;
+  background: #fbfcfd;
+  border-top: 1px solid #edf2f7;
+}
+
+.cr-week-summary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.85rem;
+  color: #5c6c7d;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.cr-week-summary-header strong {
+  color: #2c3e50;
+  font-size: 0.9rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.cr-week-missions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 0.75rem;
+}
+
+.cr-week-mission {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 68px;
+  padding: 0.85rem 1rem;
+  border: 1px solid #e2eaf3;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #2c3e50;
+  font: inherit;
+  text-decoration: none;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.cr-week-mission:hover {
+  border-color: #cbd8e6;
+  box-shadow: 0 8px 18px rgba(44, 62, 80, 0.08);
+  transform: translateY(-1px);
+}
+
+.cr-week-mission.is-current {
+  border-color: rgba(23, 130, 75, 0.28);
+  background: #f2fbf6;
+}
+
+.cr-week-mission-main {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.cr-week-mission-main strong,
+.cr-week-mission-main small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cr-week-mission-main strong {
+  color: #2c3e50;
+  font-size: 0.98rem;
+}
+
+.cr-week-mission-main small {
+  color: #6f7d8d;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.cr-week-mission-days {
+  flex: 0 0 auto;
+  color: #17824b;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.cr-week-empty {
+  margin: 0;
+  color: #7d8997;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
 .cr-detail-message {
   margin: 0;
   color: #5c6c7d;
@@ -159,6 +353,11 @@
 }
 
 @media (max-width: 768px) {
+  .cr-detail-header-actions {
+    align-items: flex-start;
+    flex-direction: column-reverse;
+  }
+
   .cr-detail-summary {
     grid-template-columns: 1fr;
   }
@@ -179,5 +378,25 @@
 
   .cr-calendar-value {
     font-size: 0.82rem;
+  }
+
+  .cr-week-summary {
+    padding: 0.85rem;
+  }
+
+  .cr-week-summary-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .cr-week-missions {
+    grid-template-columns: 1fr;
+  }
+
+  .cr-week-mission {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.55rem;
   }
 }

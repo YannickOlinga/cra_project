@@ -11,13 +11,25 @@ import { UpdateAssignmentDto } from './dto/update-assignment.dto';
 import { Assignment } from './entities/assignment.entity';
 import { AccountRole } from '../auth/dto/register-account.dto';
 import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
+import { ActivityReport } from '../activity-reports/entities/activity-report.entity';
 
 @Injectable()
 export class AssignmentsService {
   constructor(
     @InjectRepository(Assignment)
     private readonly assignmentsRepository: Repository<Assignment>,
+    @InjectRepository(ActivityReport)
+    private readonly activityReportsRepository: Repository<ActivityReport>,
   ) {}
+
+  private getReportAssignmentIds(report: ActivityReport): number[] {
+    return Array.from(
+      new Set([
+        ...(report.assignment_ids ?? []),
+        ...(report.assignments_id ? [report.assignments_id] : []),
+      ]),
+    );
+  }
 
   async create(
     createAssignmentDto: CreateAssignmentDto,
@@ -52,7 +64,12 @@ export class AssignmentsService {
       providers_id,
     });
 
-    return this.assignmentsRepository.save(assignment);
+    const savedAssignment = await this.assignmentsRepository.save(assignment);
+
+    return this.assignmentsRepository.findOne({
+      where: { id: savedAssignment.id },
+      relations: ['provider', 'customer'],
+    });
   }
 
   async findAll(authUser: AuthenticatedUser) {
@@ -118,13 +135,57 @@ export class AssignmentsService {
   async remove(id: number, authUser: AuthenticatedUser) {
     const assignment = await this.findOne(id, authUser);
 
-    if (authUser.role !== AccountRole.Customer) {
-      throw new ForbiddenException('Only customers can delete assignments.');
+    if (
+      authUser.role !== AccountRole.Customer &&
+      authUser.role !== AccountRole.Provider
+    ) {
+      throw new ForbiddenException('Only assignment owners can delete assignments.');
     }
 
-    // TODO: Implémenter la vérification des pointages (CRA) existants
-    // Si des heures ont été pointées sur cette mission, empêcher la suppression !
-    // throw new BadRequestException('Cannot delete assignment because CRA hours are logged.');
+    if (
+      authUser.role === AccountRole.Provider &&
+      assignment.providers_id !== authUser.profileId
+    ) {
+      throw new ForbiddenException('You can only delete your own assignments.');
+    }
+
+    if (
+      authUser.role === AccountRole.Customer &&
+      assignment.customers_id !== authUser.profileId
+    ) {
+      throw new ForbiddenException('You can only delete your own assignments.');
+    }
+
+    const providerReports = await this.activityReportsRepository.find({
+      where: { providers_id: assignment.providers_id },
+    });
+
+    await Promise.all(
+      providerReports.map(async (report) => {
+        const assignmentIds = this.getReportAssignmentIds(report);
+
+        if (!assignmentIds.includes(assignment.id)) {
+          return report;
+        }
+
+        const nextAssignmentIds = assignmentIds.filter(
+          (assignmentId) => assignmentId !== assignment.id,
+        );
+
+        if (nextAssignmentIds.length === 0) {
+          return this.activityReportsRepository.remove(report);
+        }
+
+        report.assignment_ids = nextAssignmentIds;
+        report.assignments_id = nextAssignmentIds.includes(
+          Number(report.assignments_id),
+        )
+          ? report.assignments_id
+          : nextAssignmentIds[0];
+
+        return this.activityReportsRepository.save(report);
+      }),
+    );
 
     return this.assignmentsRepository.remove(assignment);
   }
