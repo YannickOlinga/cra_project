@@ -117,9 +117,9 @@ export default function Missions() {
             <h3 className="cr-nav-title">MENU</h3>
             <ul className="cr-nav-list">
               <li className="cr-nav-item">
-                <a href="/compte-rendu" className="cr-nav-link">
+                <a href="/clients" className="cr-nav-link">
                   <span className="cr-nav-icon"></span>
-                  <span>CRA</span>
+                  <span>Clients</span>
                 </a>
               </li>
               <li className="cr-nav-item active">
@@ -129,9 +129,9 @@ export default function Missions() {
                 </a>
               </li>
               <li className="cr-nav-item">
-                <a href="/clients" className="cr-nav-link">
+                <a href="/compte-rendu" className="cr-nav-link">
                   <span className="cr-nav-icon"></span>
-                  <span>Clients</span>
+                  <span>CRA</span>
                 </a>
               </li>
               <li className="cr-nav-item">
