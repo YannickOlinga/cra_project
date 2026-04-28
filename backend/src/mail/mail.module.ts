@@ -7,6 +7,6 @@ import { RecaptchaService } from './recaptcha.service';
 @Module({
   controllers: [MailController],
   providers: [ContactRateLimiterService, MailService, RecaptchaService],
-  exports: [MailService],
+  exports: [MailService, RecaptchaService],
 })
 export class MailModule {}

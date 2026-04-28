@@ -128,6 +128,18 @@
     color: #bff0c9;
 }
 
+.signup-recaptcha {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    max-width: 520px;
+    min-height: 78px;
+}
+
+.recaptcha-widget {
+    min-height: 78px;
+}
+
 @media (max-width: 900px) {
     .signup-layout {
         flex-direction: column;

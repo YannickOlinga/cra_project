@@ -18,6 +18,14 @@ export class RecaptchaService {
   constructor(private readonly configService: ConfigService) {}
 
   async verifyContactToken(token: string, remoteIp: string) {
+    return this.verifyToken(token, remoteIp);
+  }
+
+  async verifyRegisterToken(token: string, remoteIp: string) {
+    return this.verifyToken(token, remoteIp);
+  }
+
+  private async verifyToken(token: string, remoteIp: string) {
     if (!token?.trim()) {
       throw new BadRequestException('Verification reCAPTCHA manquante.');
     }
