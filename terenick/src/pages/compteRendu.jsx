@@ -243,10 +243,10 @@ export default function CompteRendu() {
           <div className="cr-nav-section">
             <h3 className="cr-nav-title">MENU</h3>
             <ul className="cr-nav-list">
-              <li className="cr-nav-item active">
-                <a href="#" className="cr-nav-link">
+              <li className="cr-nav-item">
+                <a href="/clients" className="cr-nav-link">
                   <span className="cr-nav-icon"></span>
-                  <span>CRA</span>
+                  <span>Clients</span>
                 </a>
               </li>
               <li className="cr-nav-item">
@@ -255,10 +255,10 @@ export default function CompteRendu() {
                   <span>Missions</span>
                 </a>
               </li>
-              <li className="cr-nav-item">
-                <a href="/clients" className="cr-nav-link">
+              <li className="cr-nav-item active">
+                <a href="#" className="cr-nav-link">
                   <span className="cr-nav-icon"></span>
-                  <span>Clients</span>
+                  <span>CRA</span>
                 </a>
               </li>
               <li className="cr-nav-item">
