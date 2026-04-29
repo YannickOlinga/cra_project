@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { AiFillDelete } from 'react-icons/ai';
+import { FaPencil } from 'react-icons/fa6';
 import './missions.css';
 import './compteRendu.css';
 import AddAssignmentModal from '../components/AddAssignmentModal';
@@ -11,6 +13,7 @@ export default function Missions() {
   const [session, setSession] = useState(null);
   const [missionRows, setMissionRows] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingMission, setEditingMission] = useState(null);
   const [deletingMissionId, setDeletingMissionId] = useState(null);
 
   useEffect(() => {
@@ -81,6 +84,20 @@ export default function Missions() {
     setMissionRows((current) => [createdAssignment, ...current]);
   }
 
+  function handleAssignmentUpdated(updatedAssignment) {
+    setMissionRows((current) =>
+      current.map((mission) =>
+        mission.id === updatedAssignment.id ? updatedAssignment : mission,
+      ),
+    );
+    setEditingMission(null);
+  }
+
+  function handleCloseAssignmentModal() {
+    setShowAddModal(false);
+    setEditingMission(null);
+  }
+
   function handleLogout() {
     localStorage.removeItem('authSession');
     window.location.href = '/login';
@@ -142,13 +159,11 @@ export default function Missions() {
       'missions.csv',
       [
         { key: 'nom', label: 'Nom' },
-        { key: 'identifiant', label: 'Identifiant' },
         { key: 'client', label: 'Client' },
         { key: 'emailClient', label: 'Email client' },
       ],
       missionRows.map((mission) => ({
         nom: mission.label || `mission ${mission.id}`,
-        identifiant: mission.id,
         client: mission.customer?.company || 'Client inconnu',
         emailClient: mission.customer?.user?.email || '-',
       })),
@@ -254,7 +269,10 @@ export default function Missions() {
           <button
             type="button"
             className="missions-add-button"
-            onClick={() => setShowAddModal(true)}
+            onClick={() => {
+              setEditingMission(null);
+              setShowAddModal(true);
+            }}
           >
             Ajouter une mission
           </button>
@@ -272,7 +290,6 @@ export default function Missions() {
               <thead>
                 <tr>
                   <th>Nom</th>
-                  <th>Identifiant</th>
                   <th>Client</th>
                   <th>Actions</th>
                 </tr>
@@ -283,7 +300,6 @@ export default function Missions() {
                     <td className="missions-name-cell">
                       <span>{mission.label || `mission ${mission.id}`}</span>
                     </td>
-                    <td>{mission.id}</td>
                     <td>
                       <div className="missions-client-block">
                         <span className="missions-client-name">
@@ -298,12 +314,23 @@ export default function Missions() {
                       <div className="missions-actions-cell">
                         <button
                           type="button"
+                          className="missions-edit-btn"
+                          title="Modifier"
+                          onClick={() => {
+                            setEditingMission(mission);
+                            setShowAddModal(true);
+                          }}
+                        >
+                          <FaPencil />
+                        </button>
+                        <button
+                          type="button"
                           className="missions-delete-btn"
                           title="Supprimer"
                           disabled={deletingMissionId === mission.id}
                           onClick={() => handleDeleteMission(mission)}
                         >
-                          <span className="missions-trash" />
+                          <AiFillDelete />
                         </button>
                       </div>
                     </td>
@@ -316,8 +343,11 @@ export default function Missions() {
 
         <AddAssignmentModal
           isOpen={showAddModal}
-          onClose={() => setShowAddModal(false)}
+          onClose={handleCloseAssignmentModal}
           onCreated={handleAssignmentCreated}
+          onUpdated={handleAssignmentUpdated}
+          assignment={editingMission}
+          mode={editingMission ? 'edit' : 'create'}
         />
       </main>
     </div>

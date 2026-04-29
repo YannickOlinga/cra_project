@@ -82,6 +82,11 @@ export class UsersController {
     return this.usersService.update(auth.sub, updateUserDto);
   }
 
+  @Delete('/me')
+  removeMe(@Authaccount() auth: AuthenticatedUser) {
+    return this.usersService.remove(auth.sub);
+  }
+
   @Put('/:id')
   update(
     @Param('id', ParseIntPipe) id: number,

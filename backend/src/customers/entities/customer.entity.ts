@@ -12,7 +12,7 @@ export class Customer {
   @Column('varchar', { length: 100, nullable: true })
   company?: string;
 
-  @Column('varchar', { length: 100, nullable: true, unique: true })
+  @Column('varchar', { length: 20, nullable: true, unique: true })
   identifier?: string;
 
   @OneToOne(() => User, { eager: true, onDelete: 'CASCADE' })

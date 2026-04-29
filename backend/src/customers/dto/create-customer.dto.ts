@@ -24,7 +24,7 @@ export class CreateCustomerDto {
   company?: string;
 
   @IsString()
-  @MaxLength(100)
+  @MaxLength(20)
   @IsOptional()
   identifier?: string;
 

@@ -60,6 +60,12 @@
   font-weight: 700;
 }
 
+.customer-field-help {
+  color: #7b8798;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
 .customer-field input {
   width: 100%;
   box-sizing: border-box;

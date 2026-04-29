@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { AiFillDelete } from 'react-icons/ai';
+import { FaPencil } from 'react-icons/fa6';
 import './compteRendu.css';
 import './clients.css';
 import AddCustomerModal from '../components/AddCustomerModal';
@@ -271,7 +273,7 @@ export default function Clients() {
                               title="Modifier"
                               onClick={() => setEditingClient(client)}
                             >
-                              <span className="clients-edit-icon" />
+                              <FaPencil />
                             </button>
                             <button
                               type="button"
@@ -279,7 +281,7 @@ export default function Clients() {
                               title="Supprimer"
                               onClick={() => setDeletingClient(client)}
                             >
-                              <span className="clients-trash-icon" />
+                              <AiFillDelete />
                             </button>
                           </div>
                         </td>
