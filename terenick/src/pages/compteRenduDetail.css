@@ -207,6 +207,18 @@
   background: linear-gradient(180deg, #e7f8ee 0%, #d2f1e0 100%);
 }
 
+.cr-calendar-cell.is-read-only {
+  cursor: default;
+}
+
+.cr-calendar-cell.is-read-only:hover {
+  background: #ffffff;
+}
+
+.cr-calendar-cell.filled.is-read-only:hover {
+  background: linear-gradient(180deg, #eef8f1 0%, #dff5e8 100%);
+}
+
 .cr-calendar-cell.is-pending {
   opacity: 0.65;
 }
@@ -419,5 +431,11 @@
 .tableau {
   margin-top: 2rem;
   background-color: #ffffff;
+  width: 100%;
+  border-collapse: collapse;
 }
 
+.cr-status.completed {
+  background: #e8f5ee;
+  color: #15803d;
+}

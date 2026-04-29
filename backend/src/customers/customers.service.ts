@@ -41,11 +41,66 @@ export class CustomersService {
     );
   }
 
+  private generateCustomerIdentifier(): string {
+    return `CLI-${randomUUID().replace(/-/g, '').slice(0, 16).toUpperCase()}`;
+  }
+
+  private async createUniqueCustomerIdentifier(): Promise<string> {
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const identifier = this.generateCustomerIdentifier();
+      const existingCustomer = await this.customersRepository.findOne({
+        where: { identifier },
+      });
+
+      if (!existingCustomer) {
+        return identifier;
+      }
+    }
+
+    throw new ConflictException('Unable to generate a unique customer identifier');
+  }
+
   async create(
     createCustomerDto: CreateCustomerDto,
     auth?: AuthenticatedUser,
   ): Promise<Customer> {
     const { user_id, company, identifier, name, email } = createCustomerDto;
+    const trimmedIdentifier = identifier?.trim();
+
+    if (auth?.role === AccountRole.Provider && trimmedIdentifier) {
+      const existingCustomer = await this.customersRepository.findOne({
+        where: { identifier: trimmedIdentifier },
+        relations: ['user', 'provider'],
+      });
+
+      if (existingCustomer) {
+        if (
+          existingCustomer.provider &&
+          existingCustomer.provider.id !== auth.profileId
+        ) {
+          throw new ConflictException(
+            'This customer identifier is already linked to another provider',
+          );
+        }
+
+        if (!existingCustomer.provider) {
+          const provider = await this.providersRepository.findOne({
+            where: { id: auth.profileId },
+          });
+
+          if (!provider) {
+            throw new NotFoundException(
+              `Provider with ID ${auth.profileId} not found`,
+            );
+          }
+
+          existingCustomer.provider = provider;
+          return this.customersRepository.save(existingCustomer);
+        }
+
+        return existingCustomer;
+      }
+    }
 
     let user: User | null = null;
 
@@ -74,7 +129,7 @@ export class CustomersService {
 
     const customer = this.customersRepository.create({
       company,
-      identifier,
+      identifier: trimmedIdentifier || await this.createUniqueCustomerIdentifier(),
       user,
     });
 
@@ -135,6 +190,29 @@ export class CustomersService {
     });
   }
 
+  async findAuthenticatedCustomer(auth: AuthenticatedUser): Promise<Customer> {
+    if (auth.role !== AccountRole.Customer) {
+      throw new ForbiddenException('Only customers can access this profile.');
+    }
+
+    const customer = await this.findOne(auth.profileId, auth);
+
+    if (!customer.identifier) {
+      customer.identifier = await this.createUniqueCustomerIdentifier();
+
+      try {
+        return await this.customersRepository.save(customer);
+      } catch (error) {
+        if (this.isUniqueConstraintError(error)) {
+          throw new ConflictException('Customer identifier already exists');
+        }
+        throw error;
+      }
+    }
+
+    return customer;
+  }
+
   async findOne(id: number, auth?: AuthenticatedUser): Promise<Customer> {
     const customer = await this.customersRepository.findOne({
       where: { id },
@@ -181,7 +259,9 @@ export class CustomersService {
     }
 
     if (updateCustomerDto.identifier !== undefined) {
-      customer.identifier = updateCustomerDto.identifier || undefined;
+      customer.identifier =
+        updateCustomerDto.identifier.trim() ||
+        await this.createUniqueCustomerIdentifier();
     }
 
     if (updateCustomerDto.user_id !== undefined) {

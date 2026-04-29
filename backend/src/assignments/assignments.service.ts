@@ -114,22 +114,40 @@ export class AssignmentsService {
   ) {
     const assignment = await this.findOne(id, authUser);
 
-    if (authUser.role !== AccountRole.Customer) {
-      throw new ForbiddenException('Only customers can update assignments.');
+    if (
+      authUser.role !== AccountRole.Customer &&
+      authUser.role !== AccountRole.Provider
+    ) {
+      throw new ForbiddenException('Only assignment owners can update assignments.');
     }
 
-    // Empêcher le changement d'acteurs
-    if (
-      updateAssignmentDto.customers_id !== undefined ||
-      updateAssignmentDto.providers_id !== undefined
-    ) {
+    if (updateAssignmentDto.providers_id !== undefined) {
       throw new BadRequestException(
-        'Cannot change customer or provider after creation.',
+        'Cannot change provider after creation.',
       );
     }
 
+    if (
+      updateAssignmentDto.hourly_rate !== undefined &&
+      updateAssignmentDto.hourly_rate <= 0
+    ) {
+      throw new BadRequestException('Hourly rate must be strictly positive.');
+    }
+
+    if (
+      updateAssignmentDto.budget !== undefined &&
+      updateAssignmentDto.budget <= 0
+    ) {
+      throw new BadRequestException('Budget must be strictly positive.');
+    }
+
     Object.assign(assignment, updateAssignmentDto);
-    return this.assignmentsRepository.save(assignment);
+    const savedAssignment = await this.assignmentsRepository.save(assignment);
+
+    return this.assignmentsRepository.findOne({
+      where: { id: savedAssignment.id },
+      relations: ['provider', 'customer'],
+    });
   }
 
   async remove(id: number, authUser: AuthenticatedUser) {

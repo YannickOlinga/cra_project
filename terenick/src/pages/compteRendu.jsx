@@ -1,5 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { FaRegEye } from 'react-icons/fa';
+import { FaPencil } from 'react-icons/fa6';
+import { AiFillDelete } from 'react-icons/ai';
 import './compteRendu.css';
 import AddCRAModal from '../components/AddCRAModal';
 import { exportRowsToCsv } from '../utils/csvExport';
@@ -504,21 +507,21 @@ export default function CompteRendu() {
                         className="cr-action-btn cr-action-link"
                         title="Voir le CRA"
                       >
-                        <span className="cr-eye-icon" />
+                        <FaRegEye />
                       </Link>
                       <Link
                         to={`/compte-rendu/${activity.id}`}
                         className="cr-action-btn cr-action-link"
                         title="Éditer le CRA"
                       >
-                        <span className="cr-edit-icon" />
+                        <FaPencil />
                       </Link>
                       <button
                         className="cr-action-btn cr-action-btn-danger"
                         title="Supprimer"
                         onClick={() => handleDeleteReport(activity)}
                       >
-                        <span className="cr-trash-icon" />
+                        <AiFillDelete />
                       </button>
                     </div>
                   </td>

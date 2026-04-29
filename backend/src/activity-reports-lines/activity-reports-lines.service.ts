@@ -78,6 +78,37 @@ export class ActivityReportsLinesService {
     }
   }
 
+  private async assertCanReadReportLines(
+    report: ActivityReport,
+    authUser: AuthenticatedUser,
+  ): Promise<void> {
+    if (
+      authUser.role === AccountRole.Provider &&
+      report.providers_id !== authUser.profileId
+    ) {
+      throw new ForbiddenException('You can only access your own activity lines.');
+    }
+
+    if (authUser.role === AccountRole.Customer) {
+      const reportAssignmentIds = this.getReportAssignmentIds(report);
+
+      if (reportAssignmentIds.length === 0) {
+        throw new ForbiddenException('You can only access your own activity lines.');
+      }
+
+      const accessibleAssignment = await this.assignmentsRepository.findOne({
+        where: reportAssignmentIds.map((assignmentId) => ({
+          id: assignmentId,
+          customers_id: authUser.profileId,
+        })),
+      });
+
+      if (!accessibleAssignment) {
+        throw new ForbiddenException('You can only access your own activity lines.');
+      }
+    }
+  }
+
   private async validateDailyPastDayLimit(
     day: number,
     activity_reports_id: number,
@@ -132,12 +163,7 @@ export class ActivityReportsLinesService {
       throw new NotFoundException('Activity report not found.');
     }
 
-    if (
-      authUser.role === AccountRole.Provider &&
-      report.providers_id !== authUser.profileId
-    ) {
-      throw new ForbiddenException('You can only access your own activity lines.');
-    }
+    await this.assertCanReadReportLines(report, authUser);
 
     return this.activityReportsLineRepository.find({
       where: { activity_reports_id },
@@ -155,12 +181,7 @@ export class ActivityReportsLinesService {
       throw new NotFoundException(`Activity Report Line #${id} not found.`);
     }
 
-    if (
-      authUser.role === AccountRole.Provider &&
-      line.activity_report.providers_id !== authUser.profileId
-    ) {
-      throw new ForbiddenException('You can only access your own activity lines.');
-    }
+    await this.assertCanReadReportLines(line.activity_report, authUser);
 
     return line;
   }

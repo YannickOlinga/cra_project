@@ -13,20 +13,33 @@ import ResetPassword from './pages/reset_password';
 import Profile from './pages/profile';
 import ClientInterface from './pages/client_interface';
 
-function RequireAuth({ children }) {
-  let session = null;
-
+function getAuthSession() {
   try {
-    session = JSON.parse(localStorage.getItem('authSession') ?? 'null');
+    return JSON.parse(localStorage.getItem('authSession') ?? 'null');
   } catch {
     localStorage.removeItem('authSession');
+    return null;
   }
+}
+
+function RequireAuth({ children }) {
+  const session = getAuthSession();
 
   if (!session?.token) {
     return <Navigate to="/login" replace />;
   }
 
   return children;
+}
+
+function CompteRenduRoute() {
+  const session = getAuthSession();
+
+  if (!session?.token) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return session.role === 'customer' ? <ClientInterface /> : <CompteRendu />;
 }
 
 import Missions from './pages/missions';
@@ -51,13 +64,13 @@ return (
 <Route path="/moderation-contact" element={<ModernContact />} />
 <Route path="/register_forget_password" element={<RegisterForgetPassword />} />
 <Route path="/reset-password" element={<ResetPassword />} />
-<Route path="/compte-rendu" element={<RequireAuth><CompteRendu /></RequireAuth>} />
+<Route path="/compte-rendu" element={<CompteRenduRoute />} />
 <Route path="/compte-rendu/:id" element={<RequireAuth><CompteRenduDetail /></RequireAuth>} />
 <Route path="/missions" element={<RequireAuth><Missions /></RequireAuth>} />
 <Route path="/clients" element={<RequireAuth><Clients /></RequireAuth>} />
 <Route path="/dashboard" element={<Navigate to="/compte-rendu" replace />} />
 <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
-<Route path="/client_interface" element={<ClientInterface />} />
+<Route path="/client_interface" element={<Navigate to="/compte-rendu" replace />} />
 </Routes>
 </Router>
 );

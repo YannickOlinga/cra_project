@@ -101,7 +101,29 @@ export class ActivityReportsService {
     if (authUser.role === AccountRole.Provider) {
       whereCondition['providers_id'] = authUser.profileId;
     }
-    // TODO: Si AccountRole.Customer, il faudrait filtrer pour ne renvoyer que les reports liés aux missions du Customer.
+
+    if (authUser.role === AccountRole.Customer) {
+      const customerAssignments = await this.assignmentsRepository.find({
+        where: { customers_id: authUser.profileId },
+      });
+      const customerAssignmentIds = new Set(
+        customerAssignments.map((assignment) => assignment.id),
+      );
+
+      if (customerAssignmentIds.size === 0) {
+        return [];
+      }
+
+      const reports = await this.activityReportsRepository.find({
+        relations: ['provider', 'assignment'],
+      });
+
+      return reports.filter((report) =>
+        this.getReportAssignmentIds(report).some((assignmentId) =>
+          customerAssignmentIds.has(assignmentId),
+        ),
+      );
+    }
 
     return this.activityReportsRepository.find({
       where: whereCondition,
@@ -119,12 +141,29 @@ export class ActivityReportsService {
       throw new NotFoundException(`Activity Report #${id} not found.`);
     }
 
-    // TODO: Verify if Customer has access to this report via an assignment
     if (
       authUser.role === AccountRole.Provider &&
       report.providers_id !== authUser.profileId
     ) {
       throw new ForbiddenException('You can only access your own reports.');
+    }
+
+    if (authUser.role === AccountRole.Customer) {
+      const reportAssignmentIds = this.getReportAssignmentIds(report);
+      if (reportAssignmentIds.length === 0) {
+        throw new ForbiddenException('You can only access your own reports.');
+      }
+
+      const accessibleAssignment = await this.assignmentsRepository.findOne({
+        where: reportAssignmentIds.map((assignmentId) => ({
+          id: assignmentId,
+          customers_id: authUser.profileId,
+        })),
+      });
+
+      if (!accessibleAssignment) {
+        throw new ForbiddenException('You can only access your own reports.');
+      }
     }
 
     return report;

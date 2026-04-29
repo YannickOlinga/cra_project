@@ -8,11 +8,30 @@ const initialForm = {
   customerId: '',
 };
 
-export default function AddAssignmentModal({ isOpen, onClose, onCreated }) {
+function getAssignmentForm(assignment) {
+  if (!assignment) {
+    return initialForm;
+  }
+
+  return {
+    missionName: assignment.label ?? '',
+    customerId: assignment.customers_id ? String(assignment.customers_id) : '',
+  };
+}
+
+export default function AddAssignmentModal({
+  isOpen,
+  onClose,
+  onCreated,
+  onUpdated,
+  assignment = null,
+  mode = 'create',
+}) {
   const [formData, setFormData] = useState(initialForm);
   const [customers, setCustomers] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const isEditMode = mode === 'edit';
 
   useEffect(() => {
     if (!isOpen) {
@@ -20,8 +39,13 @@ export default function AddAssignmentModal({ isOpen, onClose, onCreated }) {
       setCustomers([]);
       setErrorMessage('');
       setIsSubmitting(false);
+      return;
     }
-  }, [isOpen]);
+
+    setFormData(getAssignmentForm(assignment));
+    setErrorMessage('');
+    setIsSubmitting(false);
+  }, [assignment, isOpen]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -98,8 +122,11 @@ export default function AddAssignmentModal({ isOpen, onClose, onCreated }) {
     setIsSubmitting(true);
 
     try {
-      const createResponse = await fetch(`${apiBaseUrl}/assignments/`, {
-        method: 'POST',
+      const endpoint = isEditMode
+        ? `${apiBaseUrl}/assignments/${assignment.id}`
+        : `${apiBaseUrl}/assignments/`;
+      const createResponse = await fetch(endpoint, {
+        method: isEditMode ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${session.token}`,
@@ -116,17 +143,26 @@ export default function AddAssignmentModal({ isOpen, onClose, onCreated }) {
       if (!createResponse.ok) {
         const message = Array.isArray(createdAssignment?.message)
           ? createdAssignment.message.join(', ')
-          : createdAssignment?.message ?? "Impossible d'ajouter la mission.";
+          : createdAssignment?.message ??
+            (isEditMode
+              ? 'Impossible de modifier la mission.'
+              : "Impossible d'ajouter la mission.");
         throw new Error(message);
       }
 
       const selectedCustomer =
         customers.find((customer) => Number(customer.id) === customerId) ?? null;
 
-      onCreated?.({
+      const nextAssignment = {
         ...createdAssignment,
         customer: createdAssignment?.customer ?? selectedCustomer,
-      });
+      };
+
+      if (isEditMode) {
+        onUpdated?.(nextAssignment);
+      } else {
+        onCreated?.(nextAssignment);
+      }
       onClose();
     } catch (error) {
       setErrorMessage(
@@ -145,7 +181,7 @@ export default function AddAssignmentModal({ isOpen, onClose, onCreated }) {
     <div className="assignment-modal-overlay">
       <div className="assignment-modal">
         <div className="assignment-modal-header">
-          <h2>Ajouter une mission</h2>
+          <h2>{isEditMode ? 'Modifier la mission' : 'Ajouter une mission'}</h2>
           <button type="button" className="assignment-modal-close" onClick={onClose}>
             ×
           </button>
@@ -199,7 +235,13 @@ export default function AddAssignmentModal({ isOpen, onClose, onCreated }) {
               Annuler
             </button>
             <button type="submit" className="assignment-btn assignment-btn-primary" disabled={isSubmitting}>
-              {isSubmitting ? 'Création...' : 'Créer la mission'}
+              {isSubmitting
+                ? isEditMode
+                  ? 'Enregistrement...'
+                  : 'Création...'
+                : isEditMode
+                  ? 'Enregistrer'
+                  : 'Créer la mission'}
             </button>
           </div>
         </form>

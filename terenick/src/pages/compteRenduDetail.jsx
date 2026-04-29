@@ -283,6 +283,7 @@ export default function CompteRenduDetail() {
   const email = session?.user?.email?.trim?.() ?? '';
   const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || 'U';
   const fullName = `${firstName} ${lastName}`.trim();
+  const isCustomer = session?.role === 'customer';
 
   const calendarCells = useMemo(() => {
     if (!report?.month || !report?.year) {
@@ -463,7 +464,13 @@ export default function CompteRenduDetail() {
   }
 
   async function handleDayClick(day) {
-    if (!session?.token || !report?.id || !selectedAssignmentId || pendingDay === day) {
+    if (
+      isCustomer ||
+      !session?.token ||
+      !report?.id ||
+      !selectedAssignmentId ||
+      pendingDay === day
+    ) {
       return;
     }
 
@@ -589,19 +596,23 @@ export default function CompteRenduDetail() {
           <div className="cr-nav-section">
             <h3 className="cr-nav-title">MENU</h3>
             <ul className="cr-nav-list">
-              <li className="cr-nav-item">
-                <a href="/clients" className="cr-nav-link">
-                  <span className="cr-nav-icon"></span>
-                  <span>Clients</span>
-                </a>
-              </li>
+              {!isCustomer ? (
+                <>
+                  <li className="cr-nav-item">
+                    <a href="/clients" className="cr-nav-link">
+                      <span className="cr-nav-icon"></span>
+                      <span>Clients</span>
+                    </a>
+                  </li>
+                  <li className="cr-nav-item">
+                    <a href="/missions" className="cr-nav-link">
+                      <span className="cr-nav-icon"></span>
+                      <span>Missions</span>
+                    </a>
+                  </li>
+                </>
+              ) : null}
               <li className="cr-nav-item active">
-                <a href="/missions" className="cr-nav-link">
-                  <span className="cr-nav-icon"></span>
-                  <span>Missions</span>
-                </a>
-              </li>
-              <li className="cr-nav-item">
                 <a href="/compte-rendu" className="cr-nav-link">
                   <span className="cr-nav-icon"></span>
                   <span>CRA</span>
@@ -712,7 +723,9 @@ export default function CompteRenduDetail() {
 
             <div className="cr-calendar-card">
               <div className="cr-assignment-picker">
-                <span className="cr-assignment-picker-label">Mission à renseigner</span>
+                <span className="cr-assignment-picker-label">
+                  {isCustomer ? 'Mission affichée' : 'Mission à renseigner'}
+                </span>
                 <div className="cr-assignment-picker-options">
                   {reportAssignments.map((item) => (
                     <button
@@ -761,8 +774,9 @@ export default function CompteRenduDetail() {
                             <button
                               type="button"
                               key={day}
-                              className={`cr-calendar-cell ${dayTotal ? 'filled' : ''} ${selectedPastDay ? 'is-selected-mission' : ''} ${pendingDay === day ? 'is-pending' : ''}`}
+                              className={`cr-calendar-cell ${dayTotal ? 'filled' : ''} ${selectedPastDay ? 'is-selected-mission' : ''} ${pendingDay === day ? 'is-pending' : ''} ${isCustomer ? 'is-read-only' : ''}`}
                               onClick={() => handleDayClick(day)}
+                              disabled={isCustomer}
                             >
                               <span className="cr-calendar-day">{day}</span>
                               <span className="cr-calendar-value">

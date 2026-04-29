@@ -77,17 +77,25 @@ export default function AddCustomerModal({
       return;
     }
 
+    const trimmedIdentifier = formData.identifier.trim();
     const payload = {
       name: formData.name.trim(),
       email: formData.email.trim(),
       ...(formData.company.trim() ? { company: formData.company.trim() } : {}),
-      ...(formData.identifier.trim()
-        ? { identifier: formData.identifier.trim() }
-        : {}),
+      ...(trimmedIdentifier ? { identifier: trimmedIdentifier } : {}),
     };
 
-    if (!payload.name || !payload.email) {
-      setErrorMessage('Le nom et l’adresse mail sont obligatoires.');
+    if (!isEditMode && !payload.name && !payload.email && !trimmedIdentifier) {
+      setErrorMessage(
+        'Renseignez au moins un identifiant client ou les informations du client.',
+      );
+      return;
+    }
+
+    if (!trimmedIdentifier && (!payload.name || !payload.email)) {
+      setErrorMessage(
+        'Le nom et l’adresse mail sont obligatoires sans identifiant client.',
+      );
       return;
     }
 
@@ -157,6 +165,7 @@ export default function AddCustomerModal({
               value={formData.name}
               onChange={handleChange}
               placeholder="Ex: Jean Dupont"
+              required={!formData.identifier.trim()}
             />
           </label>
 
@@ -168,6 +177,7 @@ export default function AddCustomerModal({
               value={formData.email}
               onChange={handleChange}
               placeholder="Ex: jean@entreprise.com"
+              required={!formData.identifier.trim()}
             />
           </label>
 
@@ -189,8 +199,13 @@ export default function AddCustomerModal({
               name="identifier"
               value={formData.identifier}
               onChange={handleChange}
-              placeholder="Optionnel"
+              maxLength={20}
+              placeholder="Ex: CLI-ABC123"
             />
+            <small className="customer-field-help">
+              Si le client existe déjà, utilisez l’identifiant affiché dans son profil
+              pour le rattacher.
+            </small>
           </label>
 
           {errorMessage ? <p className="customer-modal-error">{errorMessage}</p> : null}

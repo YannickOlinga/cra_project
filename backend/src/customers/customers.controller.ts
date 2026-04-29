@@ -34,6 +34,11 @@ export class CustomersController {
     return this.customersService.findAll(auth);
   }
 
+  @Get('me')
+  findMe(@Authaccount() auth: AuthenticatedUser) {
+    return this.customersService.findAuthenticatedCustomer(auth);
+  }
+
   @Get(':id')
   findOne(
     @Param('id', ParseIntPipe) id: number,
