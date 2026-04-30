@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FaRegEye, FaRegEyeSlash } from 'react-icons/fa';
 import Navbar from '../components/Navbar';
 import './login.css';
 
@@ -9,6 +10,7 @@ function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -79,16 +81,27 @@ function Login() {
               autoComplete="email"
               required
             />
-            <input
-              className="login-field"
-              type="password"
-              placeholder="Mot de passe"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              autoComplete="current-password"
-              required
-              minLength={8}
-            />
+            <div className="login-password-field">
+              <input
+                className="login-field login-password-input"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Mot de passe"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                autoComplete="current-password"
+                required
+                minLength={8}
+              />
+              <button
+                type="button"
+                className="login-password-toggle"
+                onClick={() => setShowPassword((current) => !current)}
+                aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                title={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+              >
+                {showPassword ? <FaRegEyeSlash /> : <FaRegEye />}
+              </button>
+            </div>
             {errorMessage ? <p className="login-error">{errorMessage}</p> : null}
             <button type="submit" className="login-submit" disabled={isSubmitting}>
               {isSubmitting ? 'Connexion...' : 'Se connecter'}

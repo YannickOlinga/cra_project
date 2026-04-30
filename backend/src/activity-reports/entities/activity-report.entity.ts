@@ -26,6 +26,9 @@ export class ActivityReport {
   @Column({ type: 'int', name: 'assignments_id', nullable: true })
   assignments_id?: number | null;
 
+  @Column('varchar', { length: 20, default: 'active' })
+  status: 'active' | 'completed';
+
   @Column('simple-array', {
     name: 'assignment_ids',
     nullable: true,

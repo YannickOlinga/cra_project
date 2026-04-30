@@ -40,6 +40,33 @@
     color: rgba(255, 255, 255, 0.92);
 }
 
+.login-password-field {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+}
+
+.login-password-input {
+    max-width: none;
+    padding-right: 2.5rem;
+}
+
+.login-password-toggle {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #ffffff;
+    cursor: pointer;
+    transform: translateY(-50%);
+}
+
 .login-submit {
     width: 100%;
     max-width: 380px;

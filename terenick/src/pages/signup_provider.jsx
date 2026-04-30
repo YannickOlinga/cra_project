@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FaRegEye, FaRegEyeSlash } from 'react-icons/fa';
 import './provider.css';
 import Navbar from '../components/Navbar';
 import {
@@ -20,6 +21,7 @@ function SignupProvider() {
     password: '',
     company: '',
   });
+  const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -211,16 +213,27 @@ function SignupProvider() {
               onChange={handleChange}
               required
             />
-            <input
-              type="password"
-              className="signup-field"
-              name="password"
-              placeholder="Password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              minLength={8}
-            />
+            <div className="signup-password-field">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                className="signup-field signup-password-input"
+                name="password"
+                placeholder="Mot de passe"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                minLength={8}
+              />
+              <button
+                type="button"
+                className="signup-password-toggle"
+                onClick={() => setShowPassword((current) => !current)}
+                aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                title={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+              >
+                {showPassword ? <FaRegEyeSlash /> : <FaRegEye />}
+              </button>
+            </div>
             {errorMessage ? (
               <p className="form-message error">{errorMessage}</p>
             ) : null}

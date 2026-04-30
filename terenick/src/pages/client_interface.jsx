@@ -35,14 +35,7 @@ function getProviderName(provider, fallbackProvider) {
 }
 
 function getReportStatus(report) {
-  const now = new Date();
-  const currentMonth = now.getMonth() + 1;
-  const currentYear = now.getFullYear();
-  const isFinished =
-    report.year < currentYear ||
-    (report.year === currentYear && report.month < currentMonth);
-
-  return isFinished
+  return report.status === 'completed'
     ? { label: 'Terminé', className: 'completed' }
     : { label: 'Actif', className: 'in-progress' };
 }
