@@ -187,7 +187,7 @@ export default function ClientInterface() {
                 </a>
               </li>
               <li className="cr-nav-item">
-                <a href="#" className="cr-nav-link">
+                <a href="/notes-frais" className="cr-nav-link">
                   <span className="cr-nav-icon"></span>
                   <span>Notes de frais</span>
                 </a>

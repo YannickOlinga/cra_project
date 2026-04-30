@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { LiaCalendarWeekSolid } from 'react-icons/lia';
 import './compteRendu.css';
 import './compteRenduDetail.css';
 import { exportRowsToCsv } from '../utils/csvExport';
@@ -17,6 +18,11 @@ const dayDateFormatter = new Intl.DateTimeFormat('fr-FR', {
   day: '2-digit',
   month: '2-digit',
   year: 'numeric',
+});
+
+const currencyFormatter = new Intl.NumberFormat('fr-FR', {
+  style: 'currency',
+  currency: 'EUR',
 });
 
 function buildMonthGrid(month, year) {
@@ -329,6 +335,21 @@ export default function CompteRenduDetail() {
     return total.toLocaleString('fr-FR', { maximumFractionDigits: 1 });
   }, [lines]);
 
+  const totalAmount = useMemo(() => {
+    const assignmentsById = new Map(
+      reportAssignments.map((reportAssignment) => [
+        Number(reportAssignment.id),
+        reportAssignment,
+      ]),
+    );
+    const total = lines.reduce((sum, line) => {
+      const lineAssignment = assignmentsById.get(Number(line.assignments_id));
+      return sum + Number(line.past_day || 0) * Number(lineAssignment?.hourly_rate || 0);
+    }, 0);
+
+    return currencyFormatter.format(total);
+  }, [lines, reportAssignments]);
+
   const weeklyMissionSummaries = useMemo(() => {
     return monthlyReportContexts.reduce((map, context) => {
       const contextLines =
@@ -359,11 +380,14 @@ export default function CompteRenduDetail() {
             `Mission #${assignmentId}`,
           client: getAssignmentClientLabel(contextAssignment),
           total: 0,
+          amount: 0,
         };
 
         weekMap.set(assignmentId, {
           ...existing,
           total: existing.total + pastDay,
+          amount:
+            existing.amount + pastDay * Number(contextAssignment?.hourly_rate || 0),
         });
       });
 
@@ -427,6 +451,8 @@ export default function CompteRenduDetail() {
         { key: 'mission', label: 'Mission' },
         { key: 'client', label: 'Client' },
         { key: 'temps', label: 'Temps' },
+        { key: 'tarifJournalier', label: 'Tarif journalier' },
+        { key: 'montant', label: 'Montant HT' },
         { key: 'prestataire', label: 'Prestataire' },
       ],
       [...lines]
@@ -448,6 +474,9 @@ export default function CompteRenduDetail() {
             mission: lineAssignment?.label || `Mission #${line.assignments_id}`,
             client: getAssignmentClientLabel(lineAssignment),
             temps: formatSummaryDays(line.past_day),
+            tarifJournalier: Number(lineAssignment?.hourly_rate || 0),
+            montant:
+              Number(line.past_day || 0) * Number(lineAssignment?.hourly_rate || 0),
             prestataire: fullName,
           };
         }),
@@ -518,7 +547,7 @@ export default function CompteRenduDetail() {
           );
         }
 
-        setLines((current) => [...current.filter((line) => line.day !== day), data]);
+        setLines((current) => [...current, data]);
         return;
       }
 
@@ -621,7 +650,7 @@ export default function CompteRenduDetail() {
                 </a>
               </li>
               <li className="cr-nav-item">
-                <a href="#" className="cr-nav-link">
+                <a href="/notes-frais" className="cr-nav-link">
                   <span className="cr-nav-icon"></span>
                   <span>Notes de frais</span>
                 </a>
@@ -721,6 +750,10 @@ export default function CompteRenduDetail() {
                 <span className="cr-detail-label">Jours saisis</span>
                 <strong>{totalDays} j.</strong>
               </div>
+              <div className="cr-detail-card">
+                <span className="cr-detail-label">Montant HT</span>
+                <strong>{totalAmount}</strong>
+              </div>
             </div>
 
             <div className="cr-calendar-card">
@@ -728,6 +761,12 @@ export default function CompteRenduDetail() {
                 <span className="cr-assignment-picker-label">
                   {isCustomer || isReportCompleted ? 'Mission affichée' : 'Mission à renseigner'}
                 </span>
+                <div className="cr-calendar-legend">
+                  <span className="cr-calendar-legend-item">
+                    <LiaCalendarWeekSolid />
+                    <span>Week-end</span>
+                  </span>
+                </div>
                 <div className="cr-assignment-picker-options">
                   {reportAssignments.map((item) => (
                     <button
@@ -738,6 +777,9 @@ export default function CompteRenduDetail() {
                     >
                       <strong>{item.label || `Mission #${item.id}`}</strong>
                       <small>{getAssignmentClientLabel(item)}</small>
+                      <small>
+                        TJM {currencyFormatter.format(Number(item.hourly_rate || 0))}
+                      </small>
                     </button>
                   ))}
                 </div>
@@ -771,16 +813,22 @@ export default function CompteRenduDetail() {
                           const selectedLine = selectedLinesByDay.get(day);
                           const selectedPastDay = Number(selectedLine?.past_day ?? 0);
                           const dayTotal = Number(dayTotals.get(day) ?? 0);
+                          const isWeekend = index >= 5;
 
                           return (
                             <button
                               type="button"
                               key={day}
-                              className={`cr-calendar-cell ${dayTotal ? 'filled' : ''} ${selectedPastDay ? 'is-selected-mission' : ''} ${pendingDay === day ? 'is-pending' : ''} ${isCustomer || isReportCompleted ? 'is-read-only' : ''}`}
+                              className={`cr-calendar-cell ${dayTotal ? 'filled' : ''} ${selectedPastDay ? 'is-selected-mission' : ''} ${pendingDay === day ? 'is-pending' : ''} ${isCustomer || isReportCompleted ? 'is-read-only' : ''} ${isWeekend ? 'is-weekend' : ''}`}
                               onClick={() => handleDayClick(day)}
                               disabled={isCustomer || isReportCompleted}
                             >
                               <span className="cr-calendar-day">{day}</span>
+                              {isWeekend ? (
+                                <span className="cr-calendar-weekend-icon" title="Week-end">
+                                  <LiaCalendarWeekSolid />
+                                </span>
+                              ) : null}
                               <span className="cr-calendar-value">
                                 {formatPastDay(dayTotal)}
                               </span>
@@ -815,6 +863,7 @@ export default function CompteRenduDetail() {
                                 </span>
                                 <span className="cr-week-mission-days">
                                   {formatSummaryDays(summary.total)}
+                                  <small>{currencyFormatter.format(summary.amount)}</small>
                                 </span>
                               </button>
                             ))}

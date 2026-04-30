@@ -40,7 +40,7 @@
 
 .cr-detail-summary {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 1rem;
 }
 
@@ -101,6 +101,31 @@
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+}
+
+.cr-calendar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.cr-calendar-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: fit-content;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid #dce5ee;
+  border-radius: 999px;
+  background: #fff;
+  color: #4f5d6e;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.cr-calendar-legend-item svg {
+  color: #2c3e50;
+  font-size: 1.05rem;
 }
 
 .cr-assignment-picker-options {
@@ -171,6 +196,7 @@
 }
 
 .cr-calendar-cell {
+  position: relative;
   display: flex;
   min-height: 132px;
   flex-direction: column;
@@ -221,6 +247,32 @@
 
 .cr-calendar-cell.is-pending {
   opacity: 0.65;
+}
+
+.cr-calendar-cell.is-weekend {
+  background: #f8fafc;
+}
+
+.cr-calendar-cell.is-weekend:hover {
+  background: #eef4f8;
+}
+
+.cr-calendar-cell.filled.is-weekend {
+  background: linear-gradient(180deg, #edf7f2 0%, #d8f1e6 100%);
+}
+
+.cr-calendar-weekend-icon {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+  display: grid;
+  place-items: center;
+  width: 1.65rem;
+  height: 1.65rem;
+  border-radius: 999px;
+  background: #e7edf3;
+  color: #2c3e50;
+  font-size: 1.05rem;
 }
 
 .cr-calendar-day {
@@ -336,10 +388,19 @@
 }
 
 .cr-week-mission-days {
+  display: grid;
+  gap: 0.15rem;
+  justify-items: end;
   flex: 0 0 auto;
   color: #17824b;
   font-size: 0.95rem;
   font-weight: 800;
+}
+
+.cr-week-mission-days small {
+  color: #6f7d8d;
+  font-size: 0.78rem;
+  font-weight: 700;
 }
 
 .cr-week-empty {

@@ -68,6 +68,29 @@
   font-size: 0.98rem;
 }
 
+.assignment-money-input {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid #d8e0ea;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.assignment-money-input input {
+  border: 0;
+  border-radius: 0;
+}
+
+.assignment-money-input span {
+  padding: 0 1rem;
+  color: #677586;
+  font-size: 0.9rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .assignment-field select {
   appearance: none;
 }
@@ -77,6 +100,15 @@
   outline: none;
   border-color: #31bf68;
   box-shadow: 0 0 0 3px rgba(49, 191, 104, 0.14);
+}
+
+.assignment-money-input:focus-within {
+  border-color: #31bf68;
+  box-shadow: 0 0 0 3px rgba(49, 191, 104, 0.14);
+}
+
+.assignment-money-input input:focus {
+  box-shadow: none;
 }
 
 .assignment-field select:disabled {

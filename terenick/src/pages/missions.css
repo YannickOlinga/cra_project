@@ -202,6 +202,20 @@
   font-size: 0.92rem;
 }
 
+.missions-rate-cell {
+  color: #30435b;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.missions-rate-cell span {
+  display: block;
+  margin-top: 0.2rem;
+  color: #7b8798;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
 .missions-actions-cell {
   display: flex;
   gap: 0.6rem;

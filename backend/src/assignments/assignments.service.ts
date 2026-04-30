@@ -40,12 +40,12 @@ export class AssignmentsService {
       createAssignmentDto.budget <= 0
     ) {
       throw new BadRequestException(
-        'Hourly rate and budget must be strictly positive.',
+        'Daily rate and budget must be strictly positive.',
       );
     }
     if (createAssignmentDto.budget < createAssignmentDto.hourly_rate) {
       throw new BadRequestException(
-        'Budget cannot be lower than the hourly rate.',
+        'Budget cannot be lower than the daily rate.',
       );
     }
 
@@ -118,20 +118,20 @@ export class AssignmentsService {
       authUser.role !== AccountRole.Customer &&
       authUser.role !== AccountRole.Provider
     ) {
-      throw new ForbiddenException('Only assignment owners can update assignments.');
+      throw new ForbiddenException(
+        'Only assignment owners can update assignments.',
+      );
     }
 
     if (updateAssignmentDto.providers_id !== undefined) {
-      throw new BadRequestException(
-        'Cannot change provider after creation.',
-      );
+      throw new BadRequestException('Cannot change provider after creation.');
     }
 
     if (
       updateAssignmentDto.hourly_rate !== undefined &&
       updateAssignmentDto.hourly_rate <= 0
     ) {
-      throw new BadRequestException('Hourly rate must be strictly positive.');
+      throw new BadRequestException('Daily rate must be strictly positive.');
     }
 
     if (
@@ -157,7 +157,9 @@ export class AssignmentsService {
       authUser.role !== AccountRole.Customer &&
       authUser.role !== AccountRole.Provider
     ) {
-      throw new ForbiddenException('Only assignment owners can delete assignments.');
+      throw new ForbiddenException(
+        'Only assignment owners can delete assignments.',
+      );
     }
 
     if (
