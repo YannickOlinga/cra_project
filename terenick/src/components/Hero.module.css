@@ -1,0 +1,109 @@
+/* Hero Component Styles - Isolated with CSS Modules */
+
+.hero {
+  width: 100%;
+  height: 10vh;
+  overflow: hidden;
+  position: relative;
+}
+
+.bgVideo {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 700px;
+  z-index: -1;
+  object-fit: cover;
+}
+
+.heroContent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 700px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.heroTexts {
+  text-align: center;
+  color: #ffffff !important;
+  max-width: 800px;
+  margin-top: 10em;
+  padding: 0 20px;
+}
+
+.heroTexts h1 {
+  color: #ffffff !important;
+  font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+  font-weight: 700;
+  font-size: 2.5rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.2;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.heroTexts p {
+  color: #ffffff !important;
+  font-size: 1.25rem;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.heroButton {
+  font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+  padding: 0.75rem 2rem;
+  background-color: transparent;
+  color: #ffffff;
+  border: 2px solid #ffffff;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: all 0.3s ease;
+}
+
+.heroButton:hover {
+  background-color: #ffffff;
+  color: #000000;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .heroTexts h1 {
+    font-size: 2rem;
+  }
+  
+  .heroTexts p {
+    font-size: 1.1rem;
+  }
+  
+  .heroButton {
+    font-size: 1rem;
+    padding: 0.6rem 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .heroTexts {
+    margin-top: 8em;
+    padding: 0 15px;
+  }
+  
+  .heroTexts h1 {
+    font-size: 1.5rem;
+  }
+  
+  .heroTexts p {
+    font-size: 1rem;
+  }
+  
+  .heroButton {
+    font-size: 0.9rem;
+    padding: 0.5rem 1.2rem;
+  }
+}
