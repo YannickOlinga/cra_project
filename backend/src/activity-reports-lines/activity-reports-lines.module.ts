@@ -7,7 +7,9 @@ import { ActivityReport } from '../activity-reports/entities/activity-report.ent
 import { Assignment } from '../assignments/entities/assignment.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ActivityReport, ActivityReportsLine, Assignment])],
+  imports: [
+    TypeOrmModule.forFeature([ActivityReport, ActivityReportsLine, Assignment]),
+  ],
   controllers: [ActivityReportsLinesController],
   providers: [ActivityReportsLinesService],
   exports: [ActivityReportsLinesService],
