@@ -3,6 +3,11 @@ import './AddCRAModal.css';
 
 const apiBaseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
+const currencyFormatter = new Intl.NumberFormat('fr-FR', {
+  style: 'currency',
+  currency: 'EUR',
+});
+
 export default function AddCRAModal({ isOpen, onClose, onGenerate }) {
   const [session, setSession] = useState(null);
   const [assignments, setAssignments] = useState([]);
@@ -255,6 +260,9 @@ export default function AddCRAModal({ isOpen, onClose, onGenerate }) {
                       <span className="cra-mission-copy">
                         <strong>{assignment.label || `Mission #${assignment.id}`}</strong>
                         {clientLabel ? <small>{clientLabel}</small> : null}
+                        <small>
+                          TJM {currencyFormatter.format(Number(assignment.hourly_rate || 0))}
+                        </small>
                       </span>
                     </label>
                   );

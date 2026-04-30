@@ -6,6 +6,7 @@ const apiBaseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 const initialForm = {
   missionName: '',
   customerId: '',
+  dailyRate: '',
 };
 
 function getAssignmentForm(assignment) {
@@ -16,6 +17,7 @@ function getAssignmentForm(assignment) {
   return {
     missionName: assignment.label ?? '',
     customerId: assignment.customers_id ? String(assignment.customers_id) : '',
+    dailyRate: assignment.hourly_rate ? String(assignment.hourly_rate) : '',
   };
 }
 
@@ -113,9 +115,15 @@ export default function AddAssignmentModal({
 
     const trimmedMissionName = formData.missionName.trim();
     const customerId = Number(formData.customerId);
+    const dailyRate = Number(formData.dailyRate);
 
-    if (!trimmedMissionName || !customerId) {
+    if (!trimmedMissionName || !customerId || !dailyRate) {
       setErrorMessage('Tous les champs sont obligatoires.');
+      return;
+    }
+
+    if (dailyRate <= 0) {
+      setErrorMessage('Le tarif journalier doit être supérieur à 0.');
       return;
     }
 
@@ -134,8 +142,8 @@ export default function AddAssignmentModal({
         body: JSON.stringify({
           label: trimmedMissionName,
           customers_id: customerId,
-          hourly_rate: 1,
-          budget: 1,
+          hourly_rate: dailyRate,
+          budget: Math.max(dailyRate, Number(assignment?.budget ?? dailyRate)),
         }),
       });
 
@@ -197,6 +205,22 @@ export default function AddAssignmentModal({
               onChange={handleChange}
               placeholder="Ex: Refonte site vitrine"
             />
+          </label>
+
+          <label className="assignment-field">
+            <span>Tarif journalier</span>
+            <div className="assignment-money-input">
+              <input
+                type="number"
+                name="dailyRate"
+                value={formData.dailyRate}
+                onChange={handleChange}
+                min="0"
+                step="0.01"
+                placeholder="Ex: 500"
+              />
+              <span>EUR / jour</span>
+            </div>
           </label>
 
           <label className="assignment-field">

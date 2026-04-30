@@ -14,6 +14,11 @@ const monthFormatter = new Intl.DateTimeFormat('fr-FR', {
   year: 'numeric',
 });
 
+const currencyFormatter = new Intl.NumberFormat('fr-FR', {
+  style: 'currency',
+  currency: 'EUR',
+});
+
 function formatReportPeriod(month, year) {
   return monthFormatter.format(new Date(year, month - 1, 1));
 }
@@ -46,6 +51,7 @@ function buildActivityGroups(activities) {
       missionNames: [],
       prestataire: activity.prestataire,
       totalValue: 0,
+      totalAmount: 0,
       etat: activity.etat,
       etatClass: activity.etatClass,
       month: activity.month,
@@ -58,6 +64,7 @@ function buildActivityGroups(activities) {
       reportIds: [...existing.reportIds, ...activityReportIds],
       missionNames: [...existing.missionNames, ...activityMissionNames],
       totalValue: existing.totalValue + Number(activity.totalValue || 0),
+      totalAmount: existing.totalAmount + Number(activity.totalAmount || 0),
       etat:
         existing.etat === 'Terminé' && activity.etat === 'Terminé'
           ? 'Terminé'
@@ -81,6 +88,7 @@ function buildActivityGroups(activities) {
             : `${uniqueMissionNames.length} missions`,
         missionNames: uniqueMissionNames,
         tempsTotal: formatDays(group.totalValue),
+        montantTotal: currencyFormatter.format(group.totalAmount),
       };
     })
     .sort((first, second) => {
@@ -168,17 +176,23 @@ export default function CompteRendu() {
 
               const linesData = await linesResponse.json().catch(() => []);
               if (!linesResponse.ok || !Array.isArray(linesData)) {
-                return [report.id, '0 j.'];
+                return [report.id, { days: 0, amount: 0 }];
               }
 
-              const total = linesData.reduce(
-                (sum, line) => sum + Number(line.past_day || 0),
-                0,
-              );
+              const total = linesData.reduce((summary, line) => {
+                const pastDay = Number(line.past_day || 0);
+                const assignment = assignmentsById.get(Number(line.assignments_id));
+
+                return {
+                  days: summary.days + pastDay,
+                  amount:
+                    summary.amount + pastDay * Number(assignment?.hourly_rate || 0),
+                };
+              }, { days: 0, amount: 0 });
 
               return [report.id, total];
             } catch {
-              return [report.id, 0];
+              return [report.id, { days: 0, amount: 0 }];
             }
           }),
         );
@@ -197,6 +211,7 @@ export default function CompteRendu() {
             return assignment?.label || `Mission #${assignmentId}`;
           });
           const statusMeta = getReportStatusMeta(report.status);
+          const reportTotal = totalsMap[report.id] ?? { days: 0, amount: 0 };
 
           return {
             id: report.id,
@@ -209,8 +224,9 @@ export default function CompteRendu() {
                   `Mission #${report.assignments_id ?? report.assignment?.id ?? report.id}`,
             missionNames,
             prestataire: providerLabel,
-            totalValue: totalsMap[report.id] ?? 0,
-            tempsTotal: formatDays(totalsMap[report.id] ?? 0),
+            totalValue: reportTotal.days,
+            totalAmount: reportTotal.amount,
+            tempsTotal: formatDays(reportTotal.days),
             etat: statusMeta.etat,
             etatClass: statusMeta.etatClass,
             month: report.month,
@@ -362,6 +378,7 @@ export default function CompteRendu() {
         { key: 'mission', label: 'Mission' },
         { key: 'prestataire', label: 'Prestataire' },
         { key: 'tempsTotal', label: 'Temps total' },
+        { key: 'montantTotal', label: 'Montant HT' },
         { key: 'etat', label: 'État' },
       ],
       activities.map((activity) => ({
@@ -369,6 +386,7 @@ export default function CompteRendu() {
         mission: activity.missionNames?.join(' | ') ?? activity.mission,
         prestataire: activity.prestataire,
         tempsTotal: activity.tempsTotal,
+        montantTotal: activity.montantTotal,
         etat: activity.etat,
       })),
     );
@@ -399,14 +417,17 @@ export default function CompteRendu() {
           createdAssignment?.label ||
           `Mission #${createdReportData?.assignments_id ?? createdAssignment?.id ?? ''}`;
 
+        const reportTotal = reportTotals[createdReportData.id] ?? { days: 0, amount: 0 };
+
         return {
           id: createdReportData.id,
           periode: formatReportPeriod(createdReportData.month, createdReportData.year),
           mission: missionLabel,
           missionNames,
           prestataire: providerLabel,
-          totalValue: reportTotals[createdReportData.id] ?? 0,
-          tempsTotal: formatDays(reportTotals[createdReportData.id] ?? 0),
+          totalValue: reportTotal.days,
+          totalAmount: reportTotal.amount,
+          tempsTotal: formatDays(reportTotal.days),
           etat: 'CRA créé',
           etatClass: 'in-progress',
           month: createdReportData.month,
@@ -462,7 +483,7 @@ export default function CompteRendu() {
                 </a>
               </li>
               <li className="cr-nav-item">
-                <a href="#" className="cr-nav-link">
+                <a href="/notes-frais" className="cr-nav-link">
                   <span className="cr-nav-icon"></span>
                   <span>Notes de frais</span>
                 </a>
@@ -544,6 +565,7 @@ export default function CompteRendu() {
                 <th>Missions</th>
                 <th>Prestataire</th>
                 <th>Temps total</th>
+                <th>Montant HT</th>
                 <th>État</th>
                 <th>Actions</th>
               </tr>
@@ -568,6 +590,7 @@ export default function CompteRendu() {
                   </td>
                   <td>{activity.prestataire}</td>
                   <td>{activity.tempsTotal}</td>
+                  <td>{activity.montantTotal}</td>
                   <td>
                     <span className={`cr-status ${activity.etatClass}`}>
                       {activity.etat}

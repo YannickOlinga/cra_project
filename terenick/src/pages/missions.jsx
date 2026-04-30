@@ -9,6 +9,11 @@ import { exportRowsToCsv } from '../utils/csvExport';
 
 const apiBaseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
+const currencyFormatter = new Intl.NumberFormat('fr-FR', {
+  style: 'currency',
+  currency: 'EUR',
+});
+
 export default function Missions() {
   const [session, setSession] = useState(null);
   const [missionRows, setMissionRows] = useState([]);
@@ -161,11 +166,13 @@ export default function Missions() {
         { key: 'nom', label: 'Nom' },
         { key: 'client', label: 'Client' },
         { key: 'emailClient', label: 'Email client' },
+        { key: 'tarifJournalier', label: 'Tarif journalier' },
       ],
       missionRows.map((mission) => ({
         nom: mission.label || `mission ${mission.id}`,
         client: mission.customer?.company || 'Client inconnu',
         emailClient: mission.customer?.user?.email || '-',
+        tarifJournalier: Number(mission.hourly_rate || 0),
       })),
     );
   }
@@ -202,7 +209,7 @@ export default function Missions() {
                 </a>
               </li>
               <li className="cr-nav-item">
-                <a href="#" className="cr-nav-link">
+                <a href="/notes-frais" className="cr-nav-link">
                   <span className="cr-nav-icon"></span>
                   <span>Notes de frais</span>
                 </a>
@@ -291,6 +298,7 @@ export default function Missions() {
                 <tr>
                   <th>Nom</th>
                   <th>Client</th>
+                  <th>TJM</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -309,6 +317,10 @@ export default function Missions() {
                           {mission.customer?.user?.email || '-'}
                         </span>
                       </div>
+                    </td>
+                    <td className="missions-rate-cell">
+                      {currencyFormatter.format(Number(mission.hourly_rate || 0))}
+                      <span>/ jour</span>
                     </td>
                     <td>
                       <div className="missions-actions-cell">

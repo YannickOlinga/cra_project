@@ -1448,6 +1448,103 @@
   color: #991b1b;
 }
 
+.notes-fees-subtitle {
+  margin: 0.45rem 0 0;
+  color: #6f7d8d;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.notes-fees-summary {
+  display: grid;
+  grid-template-columns: 1.35fr repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.notes-fees-card {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1.3rem 1.4rem;
+  border: 1px solid #e5ebf2;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 12px 28px rgba(22, 34, 51, 0.08);
+}
+
+.notes-fees-card-primary {
+  background: #2c3e50;
+  color: #fff;
+}
+
+.notes-fees-card span {
+  color: inherit;
+  font-size: 0.86rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  opacity: 0.78;
+  text-transform: uppercase;
+}
+
+.notes-fees-card strong {
+  color: inherit;
+  font-size: 1.8rem;
+}
+
+.notes-fees-card small {
+  color: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  opacity: 0.72;
+}
+
+.notes-fees-search {
+  width: min(100%, 360px);
+  padding: 0.85rem 1rem;
+  border: 1px solid #d8e0ea;
+  border-radius: 12px;
+  background: #fff;
+  color: #30435b;
+  font-size: 0.96rem;
+}
+
+.notes-fees-search:focus {
+  outline: none;
+  border-color: #31bf68;
+  box-shadow: 0 0 0 3px rgba(49, 191, 104, 0.14);
+}
+
+.notes-fees-table td strong {
+  color: #30435b;
+}
+
+.notes-fees-payable {
+  display: inline-flex;
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  background: #e8f5ee;
+  color: #15803d;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.notes-fees-periods {
+  display: block;
+  max-width: 260px;
+  overflow: hidden;
+  color: #6f7d8d;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notes-fees-empty {
+  color: #7b8798;
+  font-weight: 700;
+  text-align: center;
+}
+
 /* Reporting Page */
 .stats-grid {
   display: grid;
