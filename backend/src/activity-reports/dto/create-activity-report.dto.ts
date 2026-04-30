@@ -1,6 +1,7 @@
 import {
   ArrayNotEmpty,
   IsArray,
+  IsIn,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -29,4 +30,8 @@ export class CreateActivityReportDto {
   @ArrayNotEmpty()
   @IsInt({ each: true })
   assignment_ids?: number[];
+
+  @IsOptional()
+  @IsIn(['active', 'completed'])
+  status?: 'active' | 'completed';
 }

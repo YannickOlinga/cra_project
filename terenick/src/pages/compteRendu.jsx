@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FaRegEye } from 'react-icons/fa';
-import { FaPencil } from 'react-icons/fa6';
+import { FaCheck } from 'react-icons/fa6';
 import { AiFillDelete } from 'react-icons/ai';
 import './compteRendu.css';
 import AddCRAModal from '../components/AddCRAModal';
@@ -20,6 +20,12 @@ function formatReportPeriod(month, year) {
 
 function formatDays(value) {
   return `${Number(value).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} j.`;
+}
+
+function getReportStatusMeta(status) {
+  return status === 'completed'
+    ? { etat: 'Terminé', etatClass: 'completed' }
+    : { etat: 'CRA créé', etatClass: 'in-progress' };
 }
 
 function buildActivityGroups(activities) {
@@ -52,6 +58,14 @@ function buildActivityGroups(activities) {
       reportIds: [...existing.reportIds, ...activityReportIds],
       missionNames: [...existing.missionNames, ...activityMissionNames],
       totalValue: existing.totalValue + Number(activity.totalValue || 0),
+      etat:
+        existing.etat === 'Terminé' && activity.etat === 'Terminé'
+          ? 'Terminé'
+          : 'CRA créé',
+      etatClass:
+        existing.etat === 'Terminé' && activity.etat === 'Terminé'
+          ? 'completed'
+          : 'in-progress',
     });
   });
 
@@ -182,6 +196,7 @@ export default function CompteRendu() {
             const assignment = assignmentsById.get(assignmentId);
             return assignment?.label || `Mission #${assignmentId}`;
           });
+          const statusMeta = getReportStatusMeta(report.status);
 
           return {
             id: report.id,
@@ -196,8 +211,8 @@ export default function CompteRendu() {
             prestataire: providerLabel,
             totalValue: totalsMap[report.id] ?? 0,
             tempsTotal: formatDays(totalsMap[report.id] ?? 0),
-            etat: 'CRA créé',
-            etatClass: 'in-progress',
+            etat: statusMeta.etat,
+            etatClass: statusMeta.etatClass,
             month: report.month,
             year: report.year,
           };
@@ -278,6 +293,64 @@ export default function CompteRendu() {
       );
     } catch {
       window.alert('Impossible de supprimer le CRA.');
+    }
+  }
+
+  async function handleToggleReportStatus(activity) {
+    if (!session?.token) {
+      return;
+    }
+
+    const isCompleted = activity.etatClass === 'completed';
+    const nextStatus = isCompleted ? 'active' : 'completed';
+    const nextStatusMeta = getReportStatusMeta(nextStatus);
+    const reportIds = activity.reportIds?.length ? activity.reportIds : [activity.id];
+    const confirmed = window.confirm(
+      isCompleted
+        ? 'Repasser ce CRA en statut créé pour pouvoir le modifier ?'
+        : 'Valider ce CRA et passer son statut à terminé ?',
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const responses = await Promise.all(
+        reportIds.map((reportId) =>
+          fetch(`${apiBaseUrl}/activity-reports/${reportId}`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${session.token}`,
+            },
+            body: JSON.stringify({ status: nextStatus }),
+          }),
+        ),
+      );
+
+      if (responses.some((response) => response.status === 401)) {
+        localStorage.removeItem('authSession');
+        window.location.href = '/login';
+        return;
+      }
+
+      if (responses.some((response) => !response.ok)) {
+        throw new Error('Impossible de modifier le statut du CRA.');
+      }
+
+      setActivities((current) =>
+        current.map((currentActivity) =>
+          currentActivity.id === activity.id
+            ? {
+                ...currentActivity,
+                etat: nextStatusMeta.etat,
+                etatClass: nextStatusMeta.etatClass,
+              }
+            : currentActivity,
+        ),
+      );
+    } catch {
+      window.alert('Impossible de modifier le statut du CRA.');
     }
   }
 
@@ -509,13 +582,18 @@ export default function CompteRendu() {
                       >
                         <FaRegEye />
                       </Link>
-                      <Link
-                        to={`/compte-rendu/${activity.id}`}
-                        className="cr-action-btn cr-action-link"
-                        title="Éditer le CRA"
+                      <button
+                        type="button"
+                        className={`cr-action-btn cr-action-btn-success ${activity.etatClass === 'completed' ? 'is-completed' : ''}`}
+                        title={
+                          activity.etatClass === 'completed'
+                            ? 'Repasser en CRA créé'
+                            : 'Valider le CRA'
+                        }
+                        onClick={() => handleToggleReportStatus(activity)}
                       >
-                        <FaPencil />
-                      </Link>
+                        <FaCheck />
+                      </button>
                       <button
                         className="cr-action-btn cr-action-btn-danger"
                         title="Supprimer"

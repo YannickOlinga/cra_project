@@ -284,6 +284,7 @@ export default function CompteRenduDetail() {
   const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || 'U';
   const fullName = `${firstName} ${lastName}`.trim();
   const isCustomer = session?.role === 'customer';
+  const isReportCompleted = report?.status === 'completed';
 
   const calendarCells = useMemo(() => {
     if (!report?.month || !report?.year) {
@@ -466,6 +467,7 @@ export default function CompteRenduDetail() {
   async function handleDayClick(day) {
     if (
       isCustomer ||
+      isReportCompleted ||
       !session?.token ||
       !report?.id ||
       !selectedAssignmentId ||
@@ -724,7 +726,7 @@ export default function CompteRenduDetail() {
             <div className="cr-calendar-card">
               <div className="cr-assignment-picker">
                 <span className="cr-assignment-picker-label">
-                  {isCustomer ? 'Mission affichée' : 'Mission à renseigner'}
+                  {isCustomer || isReportCompleted ? 'Mission affichée' : 'Mission à renseigner'}
                 </span>
                 <div className="cr-assignment-picker-options">
                   {reportAssignments.map((item) => (
@@ -774,9 +776,9 @@ export default function CompteRenduDetail() {
                             <button
                               type="button"
                               key={day}
-                              className={`cr-calendar-cell ${dayTotal ? 'filled' : ''} ${selectedPastDay ? 'is-selected-mission' : ''} ${pendingDay === day ? 'is-pending' : ''} ${isCustomer ? 'is-read-only' : ''}`}
+                              className={`cr-calendar-cell ${dayTotal ? 'filled' : ''} ${selectedPastDay ? 'is-selected-mission' : ''} ${pendingDay === day ? 'is-pending' : ''} ${isCustomer || isReportCompleted ? 'is-read-only' : ''}`}
                               onClick={() => handleDayClick(day)}
-                              disabled={isCustomer}
+                              disabled={isCustomer || isReportCompleted}
                             >
                               <span className="cr-calendar-day">{day}</span>
                               <span className="cr-calendar-value">

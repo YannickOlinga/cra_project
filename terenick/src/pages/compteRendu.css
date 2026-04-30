@@ -395,6 +395,11 @@
   color: #9a6b00;
 }
 
+.cr-status.completed {
+  background: #e8f5ee;
+  color: #15803d;
+}
+
 .cr-action-buttons {
   display: flex;
   gap: 0.6rem;
@@ -430,6 +435,33 @@
 .cr-action-btn-danger:hover {
   border-color: #f1c2c2;
   background: #fff4f4;
+}
+
+.cr-action-btn-success {
+  border-color: #b7e3c9;
+  background: #effaf4;
+  color: #15803d;
+}
+
+.cr-action-btn-success:hover {
+  border-color: #9dd8b7;
+  background: #e4f7ec;
+}
+
+.cr-action-btn-success.is-completed {
+  border-color: #86caa3;
+  background: #dff4e8;
+  color: #0f6b34;
+}
+
+.cr-action-btn-success.is-completed:hover {
+  border-color: #75bd94;
+  background: #d2eedf;
+}
+
+.cr-action-btn-success:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .cr-eye-icon,
