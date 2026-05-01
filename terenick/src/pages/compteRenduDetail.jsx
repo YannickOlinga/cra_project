@@ -25,6 +25,9 @@ const currencyFormatter = new Intl.NumberFormat('fr-FR', {
   currency: 'EUR',
 });
 
+const pastDayCycle = [0, 0.5, 1, 1.5, 2, 2.5, 3];
+const maxDailyPastDay = 3;
+
 function buildMonthGrid(month, year) {
   const daysInMonth = new Date(year, month, 0).getDate();
   const firstDay = new Date(year, month - 1, 1);
@@ -57,12 +60,10 @@ function buildCalendarWeeks(cells) {
 }
 
 function formatPastDay(value) {
-  if (Number(value) === 1) {
-    return '1 j.';
-  }
+  const numericValue = Number(value);
 
-  if (Number(value) === 0.5) {
-    return '0,5 j.';
+  if (numericValue > 0) {
+    return `${numericValue.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} j.`;
   }
 
   return '-';
@@ -330,6 +331,32 @@ export default function CompteRenduDetail() {
     }, new Map());
   }, [lines]);
 
+  const dayMissionSummaries = useMemo(() => {
+    const assignmentsById = new Map(
+      reportAssignments.map((reportAssignment) => [
+        Number(reportAssignment.id),
+        reportAssignment,
+      ]),
+    );
+
+    return lines.reduce((map, line) => {
+      const assignmentId = Number(line.assignments_id);
+      const assignment = assignmentsById.get(assignmentId);
+      const currentDaySummaries = map.get(line.day) ?? [];
+
+      map.set(line.day, [
+        ...currentDaySummaries,
+        {
+          assignmentId,
+          mission: assignment?.label || `Mission #${assignmentId}`,
+          pastDay: Number(line.past_day || 0),
+        },
+      ]);
+
+      return map;
+    }, new Map());
+  }, [lines, reportAssignments]);
+
   const totalDays = useMemo(() => {
     const total = lines.reduce((sum, line) => sum + Number(line.past_day || 0), 0);
     return total.toLocaleString('fr-FR', { maximumFractionDigits: 1 });
@@ -483,6 +510,10 @@ export default function CompteRenduDetail() {
     );
   }
 
+  function handleExportPdf() {
+    window.print();
+  }
+
   function handleUnauthorized() {
     localStorage.removeItem('authSession');
     window.location.href = '/login';
@@ -508,11 +539,16 @@ export default function CompteRenduDetail() {
     const currentLine = selectedLinesByDay.get(day);
     const currentValue = Number(currentLine?.past_day ?? 0);
     const dayTotal = Number(dayTotals.get(day) ?? 0);
-    const nextValue = currentValue === 0 ? 0.5 : currentValue === 0.5 ? 1 : 0;
+    const currentCycleIndex = pastDayCycle.indexOf(currentValue);
+    let nextValue =
+      pastDayCycle[
+        currentCycleIndex >= 0
+          ? (currentCycleIndex + 1) % pastDayCycle.length
+          : 1
+      ];
 
-    if (nextValue > currentValue && dayTotal - currentValue + nextValue > 1) {
-      setErrorMessage('Le total saisi sur une journée ne peut pas dépasser 1 j.');
-      return;
+    if (nextValue > currentValue && dayTotal - currentValue + nextValue > maxDailyPastDay) {
+      nextValue = 0;
     }
 
     setPendingDay(day);
@@ -650,9 +686,9 @@ export default function CompteRenduDetail() {
                 </a>
               </li>
               <li className="cr-nav-item">
-                <a href="/notes-frais" className="cr-nav-link">
+                <a href="/facturation" className="cr-nav-link">
                   <span className="cr-nav-icon"></span>
-                  <span>Notes de frais</span>
+                  <span>Facturation</span>
                 </a>
               </li>
             </ul>
@@ -701,6 +737,14 @@ export default function CompteRenduDetail() {
               disabled={!report || lines.length === 0}
             >
               Exporter (.csv)
+            </button>
+            <button
+              type="button"
+              className="cr-btn cr-btn-outline cr-detail-export-btn"
+              onClick={handleExportPdf}
+              disabled={!report}
+            >
+              Exporter PDF
             </button>
             <div className="cr-user-info">
               <div className="cr-user-details">
@@ -757,31 +801,12 @@ export default function CompteRenduDetail() {
             </div>
 
             <div className="cr-calendar-card">
-              <div className="cr-assignment-picker">
-                <span className="cr-assignment-picker-label">
-                  {isCustomer || isReportCompleted ? 'Mission affichée' : 'Mission à renseigner'}
-                </span>
+              <div className="cr-calendar-toolbar">
                 <div className="cr-calendar-legend">
                   <span className="cr-calendar-legend-item">
                     <LiaCalendarWeekSolid />
                     <span>Week-end</span>
                   </span>
-                </div>
-                <div className="cr-assignment-picker-options">
-                  {reportAssignments.map((item) => (
-                    <button
-                      type="button"
-                      key={item.id}
-                      className={`cr-assignment-chip ${String(item.id) === selectedAssignmentId ? 'active' : ''}`}
-                      onClick={() => setSelectedAssignmentId(String(item.id))}
-                    >
-                      <strong>{item.label || `Mission #${item.id}`}</strong>
-                      <small>{getAssignmentClientLabel(item)}</small>
-                      <small>
-                        TJM {currencyFormatter.format(Number(item.hourly_rate || 0))}
-                      </small>
-                    </button>
-                  ))}
                 </div>
               </div>
               <div className="cr-calendar-head">
@@ -793,9 +818,20 @@ export default function CompteRenduDetail() {
               </div>
               <div className="cr-calendar-weeks">
                 {calendarWeeks.map((week, weekIndex) => {
-                  const summaries = Array.from(
-                    weeklyMissionSummaries.get(weekIndex)?.values() ?? [],
-                  ).sort((first, second) => first.mission.localeCompare(second.mission));
+                  const summaryByAssignmentId =
+                    weeklyMissionSummaries.get(weekIndex) ?? new Map();
+                  const summaries = reportAssignments.map((item) => {
+                    const assignmentId = Number(item.id);
+                    const existingSummary = summaryByAssignmentId.get(assignmentId);
+
+                    return {
+                      assignmentId,
+                      mission: item.label || `Mission #${assignmentId}`,
+                      client: getAssignmentClientLabel(item),
+                      total: existingSummary?.total ?? 0,
+                      amount: existingSummary?.amount ?? 0,
+                    };
+                  });
 
                   return (
                     <div className="cr-calendar-week" key={`week-${weekIndex}`}>
@@ -813,6 +849,7 @@ export default function CompteRenduDetail() {
                           const selectedLine = selectedLinesByDay.get(day);
                           const selectedPastDay = Number(selectedLine?.past_day ?? 0);
                           const dayTotal = Number(dayTotals.get(day) ?? 0);
+                          const dayMissions = dayMissionSummaries.get(day) ?? [];
                           const isWeekend = index >= 5;
 
                           return (
@@ -832,6 +869,25 @@ export default function CompteRenduDetail() {
                               <span className="cr-calendar-value">
                                 {formatPastDay(dayTotal)}
                               </span>
+                              {dayMissions.length ? (
+                                <span className="cr-calendar-missions">
+                                  {dayMissions.slice(0, 2).map((dayMission) => (
+                                    <span
+                                      key={`${day}-${dayMission.assignmentId}`}
+                                      className={`cr-calendar-mission-pill ${String(dayMission.assignmentId) === selectedAssignmentId ? 'is-current' : ''}`}
+                                    >
+                                      <span>{dayMission.mission}</span>
+                                      <strong>{formatPastDay(dayMission.pastDay)}</strong>
+                                    </span>
+                                  ))}
+                                  {dayMissions.length > 2 ? (
+                                    <span className="cr-calendar-mission-more">
+                                      +{dayMissions.length - 2} mission
+                                      {dayMissions.length - 2 > 1 ? 's' : ''}
+                                    </span>
+                                  ) : null}
+                                </span>
+                              ) : null}
                               {selectedPastDay ? (
                                 <span className="cr-calendar-selected-value">
                                   Mission: {formatPastDay(selectedPastDay)}
@@ -848,29 +904,25 @@ export default function CompteRenduDetail() {
                           <strong>{getWeekRangeLabel(week)}</strong>
                         </div>
 
-                        {summaries.length ? (
-                          <div className="cr-week-missions">
-                            {summaries.map((summary) => (
-                              <button
-                                key={summary.assignmentId}
-                                type="button"
-                                onClick={() => setSelectedAssignmentId(String(summary.assignmentId))}
-                                className={`cr-week-mission ${String(summary.assignmentId) === selectedAssignmentId ? 'is-current' : ''}`}
-                              >
-                                <span className="cr-week-mission-main">
-                                  <strong>{summary.mission}</strong>
-                                  <small>{summary.client}</small>
-                                </span>
-                                <span className="cr-week-mission-days">
-                                  {formatSummaryDays(summary.total)}
-                                  <small>{currencyFormatter.format(summary.amount)}</small>
-                                </span>
-                              </button>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="cr-week-empty">Aucune mission saisie cette semaine.</p>
-                        )}
+                        <div className="cr-week-missions">
+                          {summaries.map((summary) => (
+                            <button
+                              key={summary.assignmentId}
+                              type="button"
+                              onClick={() => setSelectedAssignmentId(String(summary.assignmentId))}
+                              className={`cr-week-mission ${String(summary.assignmentId) === selectedAssignmentId ? 'is-current' : ''} ${summary.total === 0 ? 'is-empty' : ''}`}
+                            >
+                              <span className="cr-week-mission-main">
+                                <strong>{summary.mission}</strong>
+                                <small>{summary.client}</small>
+                              </span>
+                              <span className="cr-week-mission-days">
+                                {formatSummaryDays(summary.total)}
+                                <small>{currencyFormatter.format(summary.amount)}</small>
+                              </span>
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   );

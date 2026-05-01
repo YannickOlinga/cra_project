@@ -96,7 +96,7 @@ export default function Taches() {
             <h3 className="nav-section-title">MENU</h3>
             <ul className="nav-list">
               <li className="nav-item">
-                <a href="/notes-frais" className="nav-link">
+                <a href="/facturation" className="nav-link">
                   <span className="nav-icon"></span>
                   <span>CRA</span>
                 </a>
@@ -122,7 +122,7 @@ export default function Taches() {
               <li className="nav-item">
                 <a href="#" className="nav-link">
                   <span className="nav-icon"></span>
-                  <span>Notes de frais</span>
+                  <span>Facturation</span>
                 </a>
               </li>
               <li className="nav-item">

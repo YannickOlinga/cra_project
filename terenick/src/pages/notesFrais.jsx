@@ -15,8 +15,6 @@ const monthFormatter = new Intl.DateTimeFormat('fr-FR', {
   year: 'numeric',
 });
 
-const TAX_RATE = 0.2;
-
 function formatDays(value) {
   return `${Number(value).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} j.`;
 }
@@ -45,11 +43,35 @@ function getCounterpartyLabel(assignment, isCustomer) {
     : getAssignmentClientLabel(assignment);
 }
 
-function buildMissionTotals({ reports, assignmentsById, linesByReportId, isCustomer }) {
-  const totalsByAssignment = new Map();
+function getPaymentStorageKey(session) {
+  return `facturationPaidMonths:${session?.user?.id ?? session?.user?.email ?? 'anonymous'}`;
+}
+
+function buildMonthlyTotals({ reports, assignmentsById, linesByReportId, isCustomer }) {
+  const totalsByMonth = new Map();
 
   reports.forEach((report) => {
     const reportLines = linesByReportId.get(Number(report.id)) ?? [];
+    const monthKey = `${report.year}-${String(report.month).padStart(2, '0')}`;
+    const existing = totalsByMonth.get(monthKey) ?? {
+      id: monthKey,
+      month: report.month,
+      year: report.year,
+      period: formatPeriod(report.month, report.year),
+      missions: new Set(),
+      counterparties: new Set(),
+      days: 0,
+      amount: 0,
+      payableAmount: 0,
+      completedReports: 0,
+      activeReports: 0,
+    };
+
+    if (report.status === 'completed') {
+      existing.completedReports += 1;
+    } else {
+      existing.activeReports += 1;
+    }
 
     reportLines.forEach((line) => {
       const assignmentId = Number(line.assignments_id);
@@ -57,58 +79,42 @@ function buildMissionTotals({ reports, assignmentsById, linesByReportId, isCusto
       const dailyRate = Number(assignment?.hourly_rate || 0);
       const days = Number(line.past_day || 0);
       const amount = days * dailyRate;
-      const taxAmount = amount * TAX_RATE;
-      const totalWithTax = amount + taxAmount;
-      const existing = totalsByAssignment.get(assignmentId) ?? {
-        assignmentId,
-        mission: assignment?.label || `Mission #${assignmentId}`,
-        counterparty: getCounterpartyLabel(assignment, isCustomer),
-        dailyRate,
-        days: 0,
-        amount: 0,
-        taxAmount: 0,
-        totalWithTax: 0,
-        payableAmount: 0,
-        payableTaxAmount: 0,
-        payableTotalWithTax: 0,
-        periods: new Set(),
-        completedReports: 0,
-        activeReports: 0,
-      };
 
+      existing.missions.add(assignment?.label || `Mission #${assignmentId}`);
+      existing.counterparties.add(getCounterpartyLabel(assignment, isCustomer));
       existing.days += days;
       existing.amount += amount;
-      existing.taxAmount += taxAmount;
-      existing.totalWithTax += totalWithTax;
-      existing.periods.add(formatPeriod(report.month, report.year));
 
       if (report.status === 'completed') {
         existing.payableAmount += amount;
-        existing.payableTaxAmount += taxAmount;
-        existing.payableTotalWithTax += totalWithTax;
-        existing.completedReports += 1;
-      } else {
-        existing.activeReports += 1;
       }
-
-      totalsByAssignment.set(assignmentId, existing);
     });
+
+    totalsByMonth.set(monthKey, existing);
   });
 
-  return Array.from(totalsByAssignment.values())
+  return Array.from(totalsByMonth.values())
     .map((total) => ({
       ...total,
-      periods: Array.from(total.periods),
+      missions: Array.from(total.missions),
+      counterparties: Array.from(total.counterparties),
     }))
-    .sort((first, second) => second.amount - first.amount);
+    .sort((first, second) => {
+      if (first.year !== second.year) {
+        return second.year - first.year;
+      }
+
+      return second.month - first.month;
+    });
 }
 
 export default function NotesFrais() {
   const [session, setSession] = useState(null);
-  const [missionTotals, setMissionTotals] = useState([]);
+  const [monthlyTotals, setMonthlyTotals] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [paidMonths, setPaidMonths] = useState([]);
   const isCustomer = session?.role === 'customer';
 
   useEffect(() => {
@@ -128,13 +134,29 @@ export default function NotesFrais() {
   }, []);
 
   useEffect(() => {
+    if (!session?.user) {
+      setPaidMonths([]);
+      return;
+    }
+
+    try {
+      const storedPaidMonths = JSON.parse(
+        localStorage.getItem(getPaymentStorageKey(session)) ?? '[]',
+      );
+      setPaidMonths(Array.isArray(storedPaidMonths) ? storedPaidMonths : []);
+    } catch {
+      setPaidMonths([]);
+    }
+  }, [session]);
+
+  useEffect(() => {
     if (!session?.token) {
       return;
     }
 
     let isCancelled = false;
 
-    async function loadMissionTotals() {
+    async function loadMonthlyTotals() {
       setIsLoading(true);
       setErrorMessage('');
 
@@ -186,8 +208,8 @@ export default function NotesFrais() {
           assignmentsData.map((assignment) => [Number(assignment.id), assignment]),
         );
 
-        setMissionTotals(
-          buildMissionTotals({
+        setMonthlyTotals(
+          buildMonthlyTotals({
             reports: reportsData,
             assignmentsById,
             linesByReportId: new Map(linesEntries),
@@ -196,7 +218,7 @@ export default function NotesFrais() {
         );
       } catch (error) {
         if (!isCancelled) {
-          setMissionTotals([]);
+          setMonthlyTotals([]);
           setErrorMessage(
             error instanceof Error ? error.message : 'Une erreur est survenue.',
           );
@@ -208,7 +230,7 @@ export default function NotesFrais() {
       }
     }
 
-    loadMissionTotals();
+    loadMonthlyTotals();
 
     return () => {
       isCancelled = true;
@@ -219,42 +241,51 @@ export default function NotesFrais() {
     const normalizedSearch = searchTerm.trim().toLowerCase();
 
     if (!normalizedSearch) {
-      return missionTotals;
+      return monthlyTotals;
     }
 
-    return missionTotals.filter((item) =>
-      [item.mission, item.counterparty, item.periods.join(' ')]
+    return monthlyTotals.filter((item) =>
+      [item.period, item.missions.join(' '), item.counterparties.join(' ')]
         .join(' ')
         .toLowerCase()
         .includes(normalizedSearch),
     );
-  }, [missionTotals, searchTerm]);
+  }, [monthlyTotals, searchTerm]);
 
   const stats = useMemo(() => {
-    return missionTotals.reduce(
+    return monthlyTotals.reduce(
       (summary, item) => ({
-        missions: summary.missions + 1,
+        months: summary.months + 1,
         days: summary.days + item.days,
         amount: summary.amount + item.amount,
-        taxAmount: summary.taxAmount + item.taxAmount,
-        totalWithTax: summary.totalWithTax + item.totalWithTax,
         payableAmount: summary.payableAmount + item.payableAmount,
-        payableTaxAmount: summary.payableTaxAmount + item.payableTaxAmount,
-        payableTotalWithTax:
-          summary.payableTotalWithTax + item.payableTotalWithTax,
       }),
       {
-        missions: 0,
+        months: 0,
         days: 0,
         amount: 0,
-        taxAmount: 0,
-        totalWithTax: 0,
         payableAmount: 0,
-        payableTaxAmount: 0,
-        payableTotalWithTax: 0,
       },
     );
-  }, [missionTotals]);
+  }, [monthlyTotals]);
+
+  const paidMonthSet = useMemo(() => new Set(paidMonths), [paidMonths]);
+
+  const paidStats = useMemo(() => {
+    return monthlyTotals.reduce(
+      (summary, item) => {
+        if (!paidMonthSet.has(item.id)) {
+          return summary;
+        }
+
+        return {
+          months: summary.months + 1,
+          amount: summary.amount + item.payableAmount,
+        };
+      },
+      { months: 0, amount: 0 },
+    );
+  }, [monthlyTotals, paidMonthSet]);
 
   const firstName = session?.user?.first_name?.trim?.() ?? 'Utilisateur';
   const lastName = session?.user?.last_name?.trim?.() ?? '';
@@ -267,33 +298,51 @@ export default function NotesFrais() {
     window.location.href = '/login';
   }
 
+  function handleTogglePaidMonth(monthId) {
+    setPaidMonths((current) => {
+      const nextPaidMonths = current.includes(monthId)
+        ? current.filter((paidMonthId) => paidMonthId !== monthId)
+        : [...current, monthId];
+
+      localStorage.setItem(
+        getPaymentStorageKey(session),
+        JSON.stringify(nextPaidMonths),
+      );
+
+      return nextPaidMonths;
+    });
+  }
+
   function handleExportCsv() {
     exportRowsToCsv(
-      'total-a-payer-par-mission.csv',
+      'total-a-payer-par-mois.csv',
       [
-        { key: 'mission', label: 'Mission' },
-        { key: 'tiers', label: isCustomer ? 'Prestataire' : 'Client' },
+        { key: 'periode', label: 'Période' },
+        { key: 'missions', label: 'Missions' },
+        { key: 'tiers', label: isCustomer ? 'Prestataires' : 'Clients' },
         { key: 'jours', label: 'Jours saisis' },
-        { key: 'tarifJournalier', label: 'Tarif journalier' },
         { key: 'montantTotal', label: 'Montant total HT' },
-        { key: 'ttc', label: 'Montant TTC' },
         {
           key: 'montantAPayer',
-          label: isCustomer ? 'Montant du valide HT' : 'Montant valide a payer HT',
+          label: isCustomer ? 'Montant dû validé HT' : 'Montant valide à payer HT',
         },
-        { key: 'ttcAPayer', label: isCustomer ? 'TTC du valide' : 'TTC valide' },
-        { key: 'periodes', label: 'Périodes' },
+        { key: 'statut', label: 'Statut' },
+        { key: 'paiement', label: 'Paiement' },
       ],
       filteredTotals.map((item) => ({
-        mission: item.mission,
-        tiers: item.counterparty,
+        periode: item.period,
+        missions: item.missions.join(' | '),
+        tiers: item.counterparties.join(' | '),
         jours: item.days,
-        tarifJournalier: item.dailyRate,
         montantTotal: item.amount,
-        ttc: item.totalWithTax,
         montantAPayer: item.payableAmount,
-        ttcAPayer: item.payableTotalWithTax,
-        periodes: item.periods.join(' | '),
+        statut:
+          item.completedReports > 0 && item.activeReports === 0
+            ? 'Validé'
+            : item.completedReports > 0
+              ? 'Partiellement validé'
+              : 'En attente',
+        paiement: paidMonthSet.has(item.id) ? 'Payé' : 'Non payé',
       })),
     );
   }
@@ -334,9 +383,9 @@ export default function NotesFrais() {
                 </a>
               </li>
               <li className="cr-nav-item active">
-                <a href="/notes-frais" className="cr-nav-link">
+                <a href="/facturation" className="cr-nav-link">
                   <span className="cr-nav-icon"></span>
-                  <span>Notes de frais</span>
+                  <span>Facturation</span>
                 </a>
               </li>
             </ul>
@@ -369,9 +418,9 @@ export default function NotesFrais() {
       <main className="cr-main-content notes-fees-content">
         <header className="cr-content-header">
           <div>
-            <h1 className="cr-page-title">Notes de frais</h1>
+            <h1 className="cr-page-title">Facturation</h1>
             <p className="notes-fees-subtitle">
-              {isCustomer ? 'Montants dus par mission' : 'Total à payer par mission'}
+              {isCustomer ? 'Montants dus par mois' : 'Total à payer par mois'}
             </p>
           </div>
           <div className="cr-user-info">
@@ -387,12 +436,8 @@ export default function NotesFrais() {
 
         <section className="notes-fees-summary">
           <div className="notes-fees-card notes-fees-card-primary">
-            <span>{isCustomer ? 'Total dû validé TTC' : 'Total à payer validé'}</span>
-            <strong>
-              {currencyFormatter.format(
-                isCustomer ? stats.payableTotalWithTax : stats.payableAmount,
-              )}
-            </strong>
+            <span>{isCustomer ? 'Total dû validé' : 'Total à payer validé'}</span>
+            <strong>{currencyFormatter.format(stats.payableAmount)}</strong>
             <small>CRA terminés uniquement</small>
           </div>
           <div className="notes-fees-card">
@@ -401,14 +446,19 @@ export default function NotesFrais() {
             <small>Tous les CRA saisis</small>
           </div>
           <div className="notes-fees-card">
-            <span>{isCustomer ? 'Total dû TTC' : 'Total TTC'}</span>
-            <strong>{currencyFormatter.format(stats.totalWithTax)}</strong>
-            <small>HT + TVA</small>
-          </div>
-          <div className="notes-fees-card">
             <span>Jours saisis</span>
             <strong>{formatDays(stats.days)}</strong>
-            <small>{stats.missions} mission{stats.missions > 1 ? 's' : ''}</small>
+            <small>{stats.months} mois</small>
+          </div>
+          <div className="notes-fees-card">
+            <span>Mois suivis</span>
+            <strong>{stats.months}</strong>
+            <small>Total mensuel</small>
+          </div>
+          <div className="notes-fees-card">
+            <span>Déjà payé</span>
+            <strong>{currencyFormatter.format(paidStats.amount)}</strong>
+            <small>{paidStats.months} mois payé{paidStats.months > 1 ? 's' : ''}</small>
           </div>
         </section>
 
@@ -418,7 +468,7 @@ export default function NotesFrais() {
             className="notes-fees-search"
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
-            placeholder={`Rechercher une mission ou un ${isCustomer ? 'prestataire' : 'client'}`}
+            placeholder={`Rechercher un mois, une mission ou un ${isCustomer ? 'prestataire' : 'client'}`}
           />
           <div className="cr-table-controls-right">
             <button type="button" className="cr-btn cr-btn-outline" onClick={handleExportCsv}>
@@ -435,49 +485,74 @@ export default function NotesFrais() {
             <table className="cr-activities-table notes-fees-table">
               <thead>
                 <tr>
-                  <th>Mission</th>
-                  <th>{isCustomer ? 'Prestataire' : 'Client'}</th>
+                  <th>Période</th>
+                  <th>Missions</th>
+                  <th>{isCustomer ? 'Prestataires' : 'Clients'}</th>
                   <th>Jours</th>
-                  <th>TJM</th>
                   <th>Total HT</th>
-                  <th>TTC</th>
-                  <th>{isCustomer ? 'Dû validé TTC' : 'À payer validé'}</th>
-                  <th>Périodes</th>
+                  <th>{isCustomer ? 'Dû validé' : 'À payer validé'}</th>
+                  <th>Statut</th>
+                  <th>Paiement</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredTotals.length ? (
                   filteredTotals.map((item) => (
-                    <tr key={item.assignmentId}>
+                    <tr key={item.id}>
                       <td>
-                        <strong>{item.mission}</strong>
-                      </td>
-                      <td>{item.counterparty}</td>
-                      <td>{formatDays(item.days)}</td>
-                      <td>{currencyFormatter.format(item.dailyRate)}</td>
-                      <td>
-                        <strong>{currencyFormatter.format(item.amount)}</strong>
+                        <strong>{item.period}</strong>
                       </td>
                       <td>
-                        <strong>{currencyFormatter.format(item.totalWithTax)}</strong>
-                      </td>
-                      <td>
-                        <span className="notes-fees-payable">
-                          {currencyFormatter.format(
-                            isCustomer ? item.payableTotalWithTax : item.payableAmount,
-                          )}
+                        <span className="notes-fees-periods">
+                          {item.missions.join(', ')}
                         </span>
                       </td>
                       <td>
                         <span className="notes-fees-periods">
-                          {item.periods.join(', ')}
+                          {item.counterparties.join(', ')}
                         </span>
+                      </td>
+                      <td>{formatDays(item.days)}</td>
+                      <td>
+                        <strong>{currencyFormatter.format(item.amount)}</strong>
+                      </td>
+                      <td>
+                        <span className="notes-fees-payable">
+                          {currencyFormatter.format(item.payableAmount)}
+                        </span>
+                      </td>
+                      <td>
+                        {item.completedReports > 0 && item.activeReports === 0
+                          ? 'Validé'
+                          : item.completedReports > 0
+                            ? 'Partiellement validé'
+                            : 'En attente'}
+                      </td>
+                      <td>
+                        <span
+                          className={`notes-fees-payment-status ${paidMonthSet.has(item.id) ? 'is-paid' : ''}`}
+                        >
+                          {paidMonthSet.has(item.id) ? 'Payé' : 'Non payé'}
+                        </span>
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          className="notes-fees-payment-btn"
+                          onClick={() => handleTogglePaidMonth(item.id)}
+                          disabled={item.payableAmount <= 0}
+                        >
+                          {paidMonthSet.has(item.id)
+                            ? 'Marquer non payé'
+                            : 'Marquer comme payé'}
+                        </button>
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="8" className="notes-fees-empty">
+                    <td colSpan="9" className="notes-fees-empty">
                       Aucun montant à payer pour le moment.
                     </td>
                   </tr>

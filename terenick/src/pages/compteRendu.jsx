@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FaRegEye } from 'react-icons/fa';
-import { FaCheck } from 'react-icons/fa6';
+import { FaRegCopy, FaRegEye } from 'react-icons/fa';
+import { FaCheck, FaPencil } from 'react-icons/fa6';
 import { AiFillDelete } from 'react-icons/ai';
 import './compteRendu.css';
 import AddCRAModal from '../components/AddCRAModal';
@@ -27,6 +27,12 @@ function formatDays(value) {
   return `${Number(value).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} j.`;
 }
 
+function getNextReportPeriod(month, year) {
+  return month === 12
+    ? { month: 1, year: year + 1 }
+    : { month: month + 1, year };
+}
+
 function getReportStatusMeta(status) {
   return status === 'completed'
     ? { etat: 'Terminé', etatClass: 'completed' }
@@ -44,9 +50,13 @@ function buildActivityGroups(activities) {
     const activityMissionNames = activity.missionNames?.length
       ? activity.missionNames
       : [activity.mission];
+    const activityAssignmentIds = activity.assignmentIds?.length
+      ? activity.assignmentIds
+      : [];
     const existing = groups.get(groupKey) ?? {
       id: activity.id,
       reportIds: [],
+      assignmentIds: [],
       periode: activity.periode,
       missionNames: [],
       prestataire: activity.prestataire,
@@ -62,6 +72,7 @@ function buildActivityGroups(activities) {
       ...existing,
       id: Math.min(existing.id, ...activityReportIds),
       reportIds: [...existing.reportIds, ...activityReportIds],
+      assignmentIds: [...existing.assignmentIds, ...activityAssignmentIds],
       missionNames: [...existing.missionNames, ...activityMissionNames],
       totalValue: existing.totalValue + Number(activity.totalValue || 0),
       totalAmount: existing.totalAmount + Number(activity.totalAmount || 0),
@@ -79,9 +90,11 @@ function buildActivityGroups(activities) {
   return Array.from(groups.values())
     .map((group) => {
       const uniqueMissionNames = Array.from(new Set(group.missionNames));
+      const uniqueAssignmentIds = Array.from(new Set(group.assignmentIds));
 
       return {
         ...group,
+        assignmentIds: uniqueAssignmentIds,
         mission:
           uniqueMissionNames.length === 1
             ? uniqueMissionNames[0]
@@ -105,6 +118,12 @@ export default function CompteRendu() {
   const [activities, setActivities] = useState([]);
   const [reportTotals, setReportTotals] = useState({});
   const [showModal, setShowModal] = useState(false);
+  const [editingActivity, setEditingActivity] = useState(null);
+  const [selectedTab, setSelectedTab] = useState('active');
+  const [duplicatingActivityId, setDuplicatingActivityId] = useState(null);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedActivityIds, setSelectedActivityIds] = useState([]);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   useEffect(() => {
     const storedSession = localStorage.getItem('authSession');
@@ -120,6 +139,129 @@ export default function CompteRendu() {
     }
   }, []);
 
+  const loadReports = useCallback(async (isCancelled = () => false) => {
+    if (!session?.token) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/activity-reports`, {
+        headers: {
+          Authorization: `Bearer ${session.token}`,
+        },
+      });
+
+      const data = await response.json().catch(() => []);
+
+      if (!response.ok || !Array.isArray(data)) {
+        throw new Error('Impossible de charger les CRA.');
+      }
+
+      if (isCancelled()) {
+        return;
+      }
+
+      const assignmentsResponse = await fetch(`${apiBaseUrl}/assignments`, {
+        headers: {
+          Authorization: `Bearer ${session.token}`,
+        },
+      });
+      const assignmentsData = await assignmentsResponse.json().catch(() => []);
+      const assignmentsById = new Map(
+        (Array.isArray(assignmentsData) ? assignmentsData : []).map((assignment) => [
+          Number(assignment.id),
+          assignment,
+        ]),
+      );
+
+      const providerLabel =
+        `${session?.user?.first_name ?? ''} ${session?.user?.last_name ?? ''}`.trim() ||
+        'Prestataire';
+
+      const totalsEntries = await Promise.all(
+        data.map(async (report) => {
+          try {
+            const linesResponse = await fetch(
+              `${apiBaseUrl}/activity-reports-lines?activity_report_id=${report.id}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${session.token}`,
+                },
+              },
+            );
+
+            const linesData = await linesResponse.json().catch(() => []);
+            if (!linesResponse.ok || !Array.isArray(linesData)) {
+              return [report.id, { days: 0, amount: 0 }];
+            }
+
+            const total = linesData.reduce((summary, line) => {
+              const pastDay = Number(line.past_day || 0);
+              const assignment = assignmentsById.get(Number(line.assignments_id));
+
+              return {
+                days: summary.days + pastDay,
+                amount:
+                  summary.amount + pastDay * Number(assignment?.hourly_rate || 0),
+              };
+            }, { days: 0, amount: 0 });
+
+            return [report.id, total];
+          } catch {
+            return [report.id, { days: 0, amount: 0 }];
+          }
+        }),
+      );
+
+      const totalsMap = Object.fromEntries(totalsEntries);
+
+      const nextActivities = data.map((report) => {
+        const assignmentIds = Array.from(
+          new Set([
+            ...(report.assignment_ids ?? []),
+            ...(report.assignments_id ? [report.assignments_id] : []),
+          ].map(Number).filter(Boolean)),
+        );
+        const missionNames = assignmentIds.map((assignmentId) => {
+          const assignment = assignmentsById.get(assignmentId);
+          return assignment?.label || `Mission #${assignmentId}`;
+        });
+        const statusMeta = getReportStatusMeta(report.status);
+        const reportTotal = totalsMap[report.id] ?? { days: 0, amount: 0 };
+
+        return {
+          id: report.id,
+          reportIds: [report.id],
+          assignmentIds,
+          periode: formatReportPeriod(report.month, report.year),
+          mission:
+            missionNames.length > 1
+              ? `${missionNames.length} missions`
+              : missionNames[0] ||
+                report.assignment?.label ||
+                `Mission #${report.assignments_id ?? report.assignment?.id ?? report.id}`,
+          missionNames,
+          prestataire: providerLabel,
+          totalValue: reportTotal.days,
+          totalAmount: reportTotal.amount,
+          tempsTotal: formatDays(reportTotal.days),
+          etat: statusMeta.etat,
+          etatClass: statusMeta.etatClass,
+          month: report.month,
+          year: report.year,
+        };
+      });
+
+      setActivities(buildActivityGroups(nextActivities));
+      setReportTotals(totalsMap);
+    } catch {
+      if (!isCancelled()) {
+        setActivities([]);
+        setReportTotals({});
+      }
+    }
+  }, [session]);
+
   useEffect(() => {
     if (!session?.token) {
       return;
@@ -127,136 +269,21 @@ export default function CompteRendu() {
 
     let isCancelled = false;
 
-    async function loadReports() {
-      try {
-        const response = await fetch(`${apiBaseUrl}/activity-reports`, {
-          headers: {
-            Authorization: `Bearer ${session.token}`,
-          },
-        });
-
-        const data = await response.json().catch(() => []);
-
-        if (!response.ok || !Array.isArray(data)) {
-          throw new Error('Impossible de charger les CRA.');
-        }
-
-        if (isCancelled) {
-          return;
-        }
-
-        const assignmentsResponse = await fetch(`${apiBaseUrl}/assignments`, {
-          headers: {
-            Authorization: `Bearer ${session.token}`,
-          },
-        });
-        const assignmentsData = await assignmentsResponse.json().catch(() => []);
-        const assignmentsById = new Map(
-          (Array.isArray(assignmentsData) ? assignmentsData : []).map((assignment) => [
-            Number(assignment.id),
-            assignment,
-          ]),
-        );
-
-        const providerLabel =
-          `${session?.user?.first_name ?? ''} ${session?.user?.last_name ?? ''}`.trim() ||
-          'Prestataire';
-
-        const totalsEntries = await Promise.all(
-          data.map(async (report) => {
-            try {
-              const linesResponse = await fetch(
-                `${apiBaseUrl}/activity-reports-lines?activity_report_id=${report.id}`,
-                {
-                  headers: {
-                    Authorization: `Bearer ${session.token}`,
-                  },
-                },
-              );
-
-              const linesData = await linesResponse.json().catch(() => []);
-              if (!linesResponse.ok || !Array.isArray(linesData)) {
-                return [report.id, { days: 0, amount: 0 }];
-              }
-
-              const total = linesData.reduce((summary, line) => {
-                const pastDay = Number(line.past_day || 0);
-                const assignment = assignmentsById.get(Number(line.assignments_id));
-
-                return {
-                  days: summary.days + pastDay,
-                  amount:
-                    summary.amount + pastDay * Number(assignment?.hourly_rate || 0),
-                };
-              }, { days: 0, amount: 0 });
-
-              return [report.id, total];
-            } catch {
-              return [report.id, { days: 0, amount: 0 }];
-            }
-          }),
-        );
-
-        const totalsMap = Object.fromEntries(totalsEntries);
-
-        const nextActivities = data.map((report) => {
-          const assignmentIds = Array.from(
-            new Set([
-              ...(report.assignment_ids ?? []),
-              ...(report.assignments_id ? [report.assignments_id] : []),
-            ].map(Number).filter(Boolean)),
-          );
-          const missionNames = assignmentIds.map((assignmentId) => {
-            const assignment = assignmentsById.get(assignmentId);
-            return assignment?.label || `Mission #${assignmentId}`;
-          });
-          const statusMeta = getReportStatusMeta(report.status);
-          const reportTotal = totalsMap[report.id] ?? { days: 0, amount: 0 };
-
-          return {
-            id: report.id,
-            periode: formatReportPeriod(report.month, report.year),
-            mission:
-              missionNames.length > 1
-                ? `${missionNames.length} missions`
-                : missionNames[0] ||
-                  report.assignment?.label ||
-                  `Mission #${report.assignments_id ?? report.assignment?.id ?? report.id}`,
-            missionNames,
-            prestataire: providerLabel,
-            totalValue: reportTotal.days,
-            totalAmount: reportTotal.amount,
-            tempsTotal: formatDays(reportTotal.days),
-            etat: statusMeta.etat,
-            etatClass: statusMeta.etatClass,
-            month: report.month,
-            year: report.year,
-          };
-        });
-
-        setActivities(buildActivityGroups(nextActivities));
-        setReportTotals(totalsMap);
-      } catch {
-        if (!isCancelled) {
-          setActivities([]);
-          setReportTotals({});
-        }
-      }
-    }
-
-    loadReports();
+    loadReports(() => isCancelled);
 
     return () => {
       isCancelled = true;
     };
-  }, [session]);
+  }, [loadReports, session]);
 
   const handleOpenModal = () => {
+    setEditingActivity(null);
     setShowModal(true);
   };
 
   const handleCloseModal = () => {
     setShowModal(false);
+    setEditingActivity(null);
   };
 
   function handleLogout() {
@@ -307,8 +334,83 @@ export default function CompteRendu() {
             !currentActivity.reportIds?.some((reportId) => reportIds.includes(reportId)),
         ),
       );
+      setSelectedActivityIds((current) =>
+        current.filter((activityId) => activityId !== activity.id),
+      );
     } catch {
       window.alert('Impossible de supprimer le CRA.');
+    }
+  }
+
+  function handleToggleSelectionMode() {
+    setIsSelectionMode((current) => !current);
+    setSelectedActivityIds([]);
+  }
+
+  function handleToggleActivitySelection(activityId) {
+    setSelectedActivityIds((current) =>
+      current.includes(activityId)
+        ? current.filter((selectedId) => selectedId !== activityId)
+        : [...current, activityId],
+    );
+  }
+
+  async function handleBulkDeleteReports() {
+    if (!session?.token || selectedActivityIds.length === 0 || isBulkDeleting) {
+      return;
+    }
+
+    const selectedActivities = displayedActivities.filter((activity) =>
+      selectedActivityIds.includes(activity.id),
+    );
+    const reportIds = selectedActivities.flatMap((activity) =>
+      activity.reportIds?.length ? activity.reportIds : [activity.id],
+    );
+    const confirmed = window.confirm(
+      `Supprimer ${selectedActivities.length} CRA sélectionné${selectedActivities.length > 1 ? 's' : ''} ?`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setIsBulkDeleting(true);
+
+    try {
+      const responses = await Promise.all(
+        reportIds.map((reportId) =>
+          fetch(`${apiBaseUrl}/activity-reports/${reportId}`, {
+            method: 'DELETE',
+            headers: {
+              Authorization: `Bearer ${session.token}`,
+            },
+          }),
+        ),
+      );
+
+      if (responses.some((response) => response.status === 401)) {
+        localStorage.removeItem('authSession');
+        window.location.href = '/login';
+        return;
+      }
+
+      if (responses.some((response) => !response.ok)) {
+        throw new Error('Impossible de supprimer tous les CRA sélectionnés.');
+      }
+
+      setActivities((current) =>
+        current.filter((activity) => !selectedActivityIds.includes(activity.id)),
+      );
+      setSelectedActivityIds([]);
+      setIsSelectionMode(false);
+    } catch (error) {
+      window.alert(
+        error instanceof Error
+          ? error.message
+          : 'Impossible de supprimer les CRA sélectionnés.',
+      );
+    } finally {
+      setIsBulkDeleting(false);
     }
   }
 
@@ -370,6 +472,68 @@ export default function CompteRendu() {
     }
   }
 
+  async function handleDuplicateReport(activity) {
+    if (!session?.token || duplicatingActivityId) {
+      return;
+    }
+
+    const assignmentIds = (activity.assignmentIds ?? []).map(Number).filter(Boolean);
+    if (assignmentIds.length === 0) {
+      window.alert('Impossible de dupliquer ce CRA sans mission associée.');
+      return;
+    }
+
+    const nextPeriod = getNextReportPeriod(activity.month, activity.year);
+    const confirmed = window.confirm(
+      `Créer le CRA de ${formatReportPeriod(nextPeriod.month, nextPeriod.year)} avec les mêmes missions ?`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDuplicatingActivityId(activity.id);
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/activity-reports`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.token}`,
+        },
+        body: JSON.stringify({
+          month: nextPeriod.month,
+          year: nextPeriod.year,
+          assignments_id: assignmentIds[0],
+          assignment_ids: assignmentIds,
+        }),
+      });
+
+      const data = await response.json().catch(() => null);
+      if (response.status === 401) {
+        localStorage.removeItem('authSession');
+        window.location.href = '/login';
+        return;
+      }
+
+      if (!response.ok) {
+        const message = Array.isArray(data?.message)
+          ? data.message.join(', ')
+          : data?.message ?? 'Impossible de dupliquer le CRA.';
+        throw new Error(message);
+      }
+
+      setSelectedTab('active');
+      await loadReports();
+    } catch (error) {
+      window.alert(
+        error instanceof Error ? error.message : 'Impossible de dupliquer le CRA.',
+      );
+    } finally {
+      setDuplicatingActivityId(null);
+    }
+  }
+
   function handleExportCsv() {
     exportRowsToCsv(
       'comptes-rendus.csv',
@@ -381,7 +545,7 @@ export default function CompteRendu() {
         { key: 'montantTotal', label: 'Montant HT' },
         { key: 'etat', label: 'État' },
       ],
-      activities.map((activity) => ({
+      displayedActivities.map((activity) => ({
         periode: activity.periode,
         mission: activity.missionNames?.join(' | ') ?? activity.mission,
         prestataire: activity.prestataire,
@@ -421,6 +585,8 @@ export default function CompteRendu() {
 
         return {
           id: createdReportData.id,
+          reportIds: [createdReportData.id],
+          assignmentIds: createdAssignments.map((selectedAssignment) => selectedAssignment.id),
           periode: formatReportPeriod(createdReportData.month, createdReportData.year),
           mission: missionLabel,
           missionNames,
@@ -442,7 +608,22 @@ export default function CompteRendu() {
     setActivities((current) => buildActivityGroups([...nextActivities, ...current]));
   };
 
-  const activeCount = useMemo(() => activities.length, [activities.length]);
+  const handleUpdateReport = () => {
+    loadReports();
+  };
+
+  const activeActivities = useMemo(
+    () => activities.filter((activity) => activity.etatClass !== 'completed'),
+    [activities],
+  );
+  const completedActivities = useMemo(
+    () => activities.filter((activity) => activity.etatClass === 'completed'),
+    [activities],
+  );
+  const displayedActivities =
+    selectedTab === 'completed' ? completedActivities : activeActivities;
+  const activeCount = activeActivities.length;
+  const completedCount = completedActivities.length;
 
   const firstName = session?.user?.first_name?.trim?.() ?? 'Sylvestre Yannick Noah';
   const lastName = session?.user?.last_name?.trim?.() ?? 'Olinga';
@@ -483,9 +664,9 @@ export default function CompteRendu() {
                 </a>
               </li>
               <li className="cr-nav-item">
-                <a href="/notes-frais" className="cr-nav-link">
+                <a href="/facturation" className="cr-nav-link">
                   <span className="cr-nav-icon"></span>
-                  <span>Notes de frais</span>
+                  <span>Facturation</span>
                 </a>
               </li>
               {/* <li className="cr-nav-item">
@@ -544,13 +725,45 @@ export default function CompteRendu() {
         </div>
 
         <div className="cr-tabs">
-          <button className="cr-tab active">
+          <button
+            type="button"
+            className={`cr-tab ${selectedTab === 'active' ? 'active' : ''}`}
+            onClick={() => setSelectedTab('active')}
+          >
             Actifs <span className="cr-tab-count">{activeCount}</span>
+          </button>
+          <button
+            type="button"
+            className={`cr-tab ${selectedTab === 'completed' ? 'active' : ''}`}
+            onClick={() => setSelectedTab('completed')}
+          >
+            Terminés <span className="cr-tab-count">{completedCount}</span>
           </button>
         </div>
 
         <div className="cr-table-controls">
-          <div className="cr-table-controls-right cr-table-controls-right-only">
+          <div className="bulk-actions">
+            <button
+              type="button"
+              className="cr-btn cr-btn-outline"
+              onClick={handleToggleSelectionMode}
+            >
+              {isSelectionMode ? 'Annuler la sélection' : 'Sélectionner'}
+            </button>
+            {isSelectionMode ? (
+              <button
+                type="button"
+                className="bulk-delete-btn"
+                onClick={handleBulkDeleteReports}
+                disabled={selectedActivityIds.length === 0 || isBulkDeleting}
+              >
+                {isBulkDeleting
+                  ? 'Suppression...'
+                  : `Supprimer (${selectedActivityIds.length})`}
+              </button>
+            ) : null}
+          </div>
+          <div className="cr-table-controls-right">
             <button className="cr-btn cr-btn-outline" onClick={handleExportCsv}>
               Exporter (.csv)
             </button>
@@ -561,6 +774,7 @@ export default function CompteRendu() {
           <table className="cr-activities-table">
             <thead>
               <tr>
+                {isSelectionMode ? <th>Sélection</th> : null}
                 <th>Période</th>
                 <th>Missions</th>
                 <th>Prestataire</th>
@@ -571,63 +785,104 @@ export default function CompteRendu() {
               </tr>
             </thead>
             <tbody>
-              {activities.map(activity => (
-                <tr key={activity.id}>
-                  <td>
-                    <Link to={`/compte-rendu/${activity.id}`} className="cr-report-link">
-                      {activity.periode}
-                    </Link>
-                  </td>
-                  <td>
-                    <Link to={`/compte-rendu/${activity.id}`} className="cr-report-link">
-                      <span className="cr-report-mission-title">{activity.mission}</span>
-                      {activity.missionNames?.length > 1 ? (
-                        <span className="cr-report-mission-list">
-                          {activity.missionNames.join(', ')}
-                        </span>
-                      ) : null}
-                    </Link>
-                  </td>
-                  <td>{activity.prestataire}</td>
-                  <td>{activity.tempsTotal}</td>
-                  <td>{activity.montantTotal}</td>
-                  <td>
-                    <span className={`cr-status ${activity.etatClass}`}>
-                      {activity.etat}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="cr-action-buttons">
-                      <Link
-                        to={`/compte-rendu/${activity.id}`}
-                        className="cr-action-btn cr-action-link"
-                        title="Voir le CRA"
-                      >
-                        <FaRegEye />
+              {displayedActivities.length ? (
+                displayedActivities.map(activity => (
+                  <tr key={activity.id}>
+                    {isSelectionMode ? (
+                      <td>
+                        <input
+                          type="checkbox"
+                          className="bulk-checkbox"
+                          checked={selectedActivityIds.includes(activity.id)}
+                          onChange={() => handleToggleActivitySelection(activity.id)}
+                          aria-label={`Sélectionner ${activity.periode}`}
+                        />
+                      </td>
+                    ) : null}
+                    <td>
+                      <Link to={`/compte-rendu/${activity.id}`} className="cr-report-link">
+                        {activity.periode}
                       </Link>
-                      <button
-                        type="button"
-                        className={`cr-action-btn cr-action-btn-success ${activity.etatClass === 'completed' ? 'is-completed' : ''}`}
-                        title={
-                          activity.etatClass === 'completed'
-                            ? 'Repasser en CRA créé'
-                            : 'Valider le CRA'
-                        }
-                        onClick={() => handleToggleReportStatus(activity)}
-                      >
-                        <FaCheck />
-                      </button>
-                      <button
-                        className="cr-action-btn cr-action-btn-danger"
-                        title="Supprimer"
-                        onClick={() => handleDeleteReport(activity)}
-                      >
-                        <AiFillDelete />
-                      </button>
-                    </div>
+                    </td>
+                    <td>
+                      <Link to={`/compte-rendu/${activity.id}`} className="cr-report-link">
+                        <span className="cr-report-mission-title">{activity.mission}</span>
+                        {activity.missionNames?.length > 1 ? (
+                          <span className="cr-report-mission-list">
+                            {activity.missionNames.join(', ')}
+                          </span>
+                        ) : null}
+                      </Link>
+                    </td>
+                    <td>{activity.prestataire}</td>
+                    <td>{activity.tempsTotal}</td>
+                    <td>{activity.montantTotal}</td>
+                    <td>
+                      <span className={`cr-status ${activity.etatClass}`}>
+                        {activity.etat}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="cr-action-buttons">
+                        <Link
+                          to={`/compte-rendu/${activity.id}`}
+                          className="cr-action-btn cr-action-link"
+                          title="Voir le CRA"
+                        >
+                          <FaRegEye />
+                        </Link>
+                        <button
+                          type="button"
+                          className="cr-action-btn cr-action-btn-edit"
+                          title="Modifier"
+                          onClick={() => {
+                            setEditingActivity(activity);
+                            setShowModal(true);
+                          }}
+                        >
+                          <FaPencil />
+                        </button>
+                        <button
+                          type="button"
+                          className="cr-action-btn cr-action-btn-copy"
+                          title="Dupliquer pour le mois suivant"
+                          disabled={duplicatingActivityId === activity.id}
+                          onClick={() => handleDuplicateReport(activity)}
+                        >
+                          <FaRegCopy />
+                        </button>
+                        <button
+                          type="button"
+                          className={`cr-action-btn cr-action-btn-success ${activity.etatClass === 'completed' ? 'is-completed' : ''}`}
+                          title={
+                            activity.etatClass === 'completed'
+                              ? 'Repasser en CRA créé'
+                              : 'Valider le CRA'
+                          }
+                          onClick={() => handleToggleReportStatus(activity)}
+                        >
+                          <FaCheck />
+                        </button>
+                        <button
+                          className="cr-action-btn cr-action-btn-danger"
+                          title="Supprimer"
+                          onClick={() => handleDeleteReport(activity)}
+                        >
+                          <AiFillDelete />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={isSelectionMode ? 8 : 7} className="cr-empty-cell">
+                    {selectedTab === 'completed'
+                      ? 'Aucun CRA terminé pour le moment.'
+                      : 'Aucun CRA actif pour le moment.'}
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
@@ -638,6 +893,9 @@ export default function CompteRendu() {
         isOpen={showModal}
         onClose={handleCloseModal}
         onGenerate={handleCreateReport}
+        onUpdated={handleUpdateReport}
+        mode={editingActivity ? 'edit' : 'create'}
+        activity={editingActivity}
       />
     </div>
   );

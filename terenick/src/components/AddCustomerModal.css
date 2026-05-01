@@ -83,6 +83,23 @@
   box-shadow: 0 0 0 3px rgba(49, 191, 104, 0.14);
 }
 
+.customer-keep-adding {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: #4f5d6e;
+  font-size: 0.94rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.customer-keep-adding input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: #2c3e50;
+  cursor: pointer;
+}
+
 .customer-modal-error {
   margin: 0;
   color: #d64545;

@@ -8,7 +8,14 @@ const currencyFormatter = new Intl.NumberFormat('fr-FR', {
   currency: 'EUR',
 });
 
-export default function AddCRAModal({ isOpen, onClose, onGenerate }) {
+export default function AddCRAModal({
+  isOpen,
+  onClose,
+  onGenerate,
+  onUpdated,
+  mode = 'create',
+  activity = null,
+}) {
   const [session, setSession] = useState(null);
   const [assignments, setAssignments] = useState([]);
   const [isLoadingAssignments, setIsLoadingAssignments] = useState(false);
@@ -19,6 +26,7 @@ export default function AddCRAModal({ isOpen, onClose, onGenerate }) {
     prestataire: '',
     missions: [],
   });
+  const isEditMode = mode === 'edit';
 
   useEffect(() => {
     if (!isOpen) {
@@ -38,7 +46,15 @@ export default function AddCRAModal({ isOpen, onClose, onGenerate }) {
       setSession(parsedSession);
       setFormData((current) => ({
         ...current,
+        periode:
+          isEditMode && activity?.year && activity?.month
+            ? `${activity.year}-${String(activity.month).padStart(2, '0')}`
+            : new Date().toISOString().slice(0, 7),
         prestataire: `${parsedSession?.user?.first_name ?? ''} ${parsedSession?.user?.last_name ?? ''}`.trim(),
+        missions:
+          isEditMode && Array.isArray(activity?.assignmentIds)
+            ? activity.assignmentIds.map(String)
+            : [],
       }));
       setFormError('');
     } catch {
@@ -47,7 +63,7 @@ export default function AddCRAModal({ isOpen, onClose, onGenerate }) {
       setFormError("Session invalide. Reconnecte-toi.");
       return;
     }
-  }, [isOpen]);
+  }, [activity, isEditMode, isOpen]);
 
   useEffect(() => {
     if (!isOpen || !session?.token) {
@@ -156,6 +172,86 @@ export default function AddCRAModal({ isOpen, onClose, onGenerate }) {
 
     try {
       const selectedAssignmentIds = formData.missions.map(Number);
+      const selectedAssignments = assignments.filter((assignment) =>
+        formData.missions.includes(String(assignment.id)),
+      );
+
+      if (isEditMode) {
+        const reportId = activity?.reportIds?.[0] ?? activity?.id;
+        if (!reportId) {
+          throw new Error('CRA introuvable.');
+        }
+
+        const previousAssignmentIds = (activity?.assignmentIds ?? []).map(Number);
+        const removedAssignmentIds = previousAssignmentIds.filter(
+          (assignmentId) => !selectedAssignmentIds.includes(assignmentId),
+        );
+
+        if (removedAssignmentIds.length > 0) {
+          const linesResponse = await fetch(
+            `${apiBaseUrl}/activity-reports-lines?activity_report_id=${reportId}`,
+            {
+              headers: {
+                Authorization: `Bearer ${session.token}`,
+              },
+            },
+          );
+          const linesData = await linesResponse.json().catch(() => []);
+
+          if (!linesResponse.ok || !Array.isArray(linesData)) {
+            throw new Error('Impossible de charger les lignes du CRA.');
+          }
+
+          const linesToDelete = linesData.filter((line) =>
+            removedAssignmentIds.includes(Number(line.assignments_id)),
+          );
+
+          const deleteResponses = await Promise.all(
+            linesToDelete.map((line) =>
+              fetch(`${apiBaseUrl}/activity-reports-lines/${line.id}`, {
+                method: 'DELETE',
+                headers: {
+                  Authorization: `Bearer ${session.token}`,
+                },
+              }),
+            ),
+          );
+
+          if (deleteResponses.some((response) => !response.ok)) {
+            throw new Error('Impossible de supprimer les lignes des missions retirées.');
+          }
+        }
+
+        const updateResponse = await fetch(`${apiBaseUrl}/activity-reports/${reportId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.token}`,
+          },
+          body: JSON.stringify({
+            month,
+            year,
+            assignments_id: selectedAssignmentIds[0],
+            assignment_ids: selectedAssignmentIds,
+          }),
+        });
+
+        const updatedReport = await updateResponse.json().catch(() => null);
+        if (!updateResponse.ok) {
+          const message = Array.isArray(updatedReport?.message)
+            ? updatedReport.message.join(', ')
+            : updatedReport?.message ?? 'Impossible de modifier le CRA.';
+          throw new Error(message);
+        }
+
+        onUpdated?.({
+          report: updatedReport,
+          assignments: selectedAssignments,
+        });
+        onClose();
+        return;
+      }
+
       const response = await fetch(`${apiBaseUrl}/activity-reports`, {
         method: 'POST',
         headers: {
@@ -177,10 +273,6 @@ export default function AddCRAModal({ isOpen, onClose, onGenerate }) {
           : data?.message ?? 'Impossible de créer le CRA.';
         throw new Error(message);
       }
-
-      const selectedAssignments = assignments.filter((assignment) =>
-        formData.missions.includes(String(assignment.id)),
-      );
 
       onGenerate?.({
         report: data,
@@ -204,7 +296,7 @@ export default function AddCRAModal({ isOpen, onClose, onGenerate }) {
     <div className="modal-overlay">
       <div className="modal-container">
         <div className="modal-header">
-          <h2>Ajouter un CRA</h2>
+          <h2>{isEditMode ? 'Modifier le CRA' : 'Ajouter un CRA'}</h2>
           <button className="modal-close" onClick={onClose}>
             ×
           </button>
@@ -219,6 +311,7 @@ export default function AddCRAModal({ isOpen, onClose, onGenerate }) {
               className="form-select"
               value={formData.periode}
               onChange={handlePeriodeChange}
+              disabled={isEditMode}
             />
           </div>
 
@@ -280,7 +373,13 @@ export default function AddCRAModal({ isOpen, onClose, onGenerate }) {
             Annuler
           </button>
           <button className="btn btn-generate" onClick={handleGenerate} disabled={isSubmitting}>
-            {isSubmitting ? 'Création...' : 'Générer'}
+            {isSubmitting
+              ? isEditMode
+                ? 'Modification...'
+                : 'Création...'
+              : isEditMode
+                ? 'Modifier'
+                : 'Générer'}
           </button>
         </div>
       </div>

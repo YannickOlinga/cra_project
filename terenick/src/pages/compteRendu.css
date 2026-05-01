@@ -283,6 +283,13 @@
   color: #fff;
 }
 
+.cr-empty-cell {
+  padding: 2rem 1rem;
+  color: #7d8997;
+  font-weight: 700;
+  text-align: center;
+}
+
 .cr-table-controls {
   justify-content: space-between;
   gap: 1rem;
@@ -297,6 +304,39 @@
 
 .cr-table-controls-right-only {
   margin-left: auto;
+}
+
+.bulk-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.bulk-delete-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #f1c2c2;
+  border-radius: 12px;
+  background: #fff4f4;
+  color: #dc2626;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.bulk-delete-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.bulk-checkbox {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: #2c3e50;
+  cursor: pointer;
 }
 
 .cr-view-toggle {
@@ -322,7 +362,8 @@
 }
 
 .cr-table-container {
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   border: 1px solid #e5ebf2;
   border-radius: 18px;
   background: #fff;
@@ -332,6 +373,10 @@
 .cr-activities-table {
   width: 100%;
   border-collapse: collapse;
+}
+
+.notes-fees-table {
+  min-width: 1480px;
 }
 
 .cr-activities-table th {
@@ -435,6 +480,34 @@
 .cr-action-btn-danger:hover {
   border-color: #f1c2c2;
   background: #fff4f4;
+}
+
+.cr-action-btn-edit {
+  border-color: #cbd8e6;
+  background: #f4f8fb;
+  color: #2c3e50;
+}
+
+.cr-action-btn-edit:hover {
+  border-color: #cbd8e6;
+  background: #f4f8fb;
+  color: #2c3e50;
+}
+
+.cr-action-btn-copy {
+  border-color: #d7deea;
+  background: #ffffff;
+  color: #3d5368;
+}
+
+.cr-action-btn-copy:hover {
+  border-color: #cbd8e6;
+  background: #f6f9fc;
+}
+
+.cr-action-btn-copy:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .cr-action-btn-success {
@@ -1339,7 +1412,7 @@
   color: #16a34a;
 }
 
-/* Notes de frais List */
+/* Facturation List */
 .notes-list h2 {
   color: #2c3e50;
   margin-bottom: 1.5rem;
@@ -1457,7 +1530,7 @@
 
 .notes-fees-summary {
   display: grid;
-  grid-template-columns: 1.35fr repeat(3, minmax(0, 1fr));
+  grid-template-columns: 1.35fr repeat(4, minmax(0, 1fr));
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
@@ -1537,6 +1610,44 @@
   font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.notes-fees-payment-status {
+  display: inline-flex;
+  padding: 0.42rem 0.7rem;
+  border-radius: 999px;
+  background: #fff7ed;
+  color: #c2410c;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.notes-fees-payment-status.is-paid {
+  background: #e8f5ee;
+  color: #15803d;
+}
+
+.notes-fees-payment-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 150px;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid #d8e0ea;
+  border-radius: 10px;
+  background: #fff;
+  color: #2c3e50;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.notes-fees-payment-btn:hover {
+  background: #f6f9fc;
+}
+
+.notes-fees-payment-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .notes-fees-empty {

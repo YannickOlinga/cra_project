@@ -27,12 +27,14 @@ export default function AddAssignmentModal({
   onCreated,
   onUpdated,
   assignment = null,
+  initialCustomerId = '',
   mode = 'create',
 }) {
   const [formData, setFormData] = useState(initialForm);
   const [customers, setCustomers] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [keepAdding, setKeepAdding] = useState(false);
   const isEditMode = mode === 'edit';
 
   useEffect(() => {
@@ -41,13 +43,22 @@ export default function AddAssignmentModal({
       setCustomers([]);
       setErrorMessage('');
       setIsSubmitting(false);
+      setKeepAdding(false);
       return;
     }
 
-    setFormData(getAssignmentForm(assignment));
+    const nextForm = getAssignmentForm(assignment);
+    setFormData({
+      ...nextForm,
+      customerId:
+        !isEditMode && initialCustomerId
+          ? String(initialCustomerId)
+          : nextForm.customerId,
+    });
     setErrorMessage('');
     setIsSubmitting(false);
-  }, [assignment, isOpen]);
+    setKeepAdding(false);
+  }, [assignment, initialCustomerId, isEditMode, isOpen]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -169,8 +180,19 @@ export default function AddAssignmentModal({
       if (isEditMode) {
         onUpdated?.(nextAssignment);
       } else {
-        onCreated?.(nextAssignment);
+        onCreated?.(nextAssignment, { keepAdding });
       }
+
+      if (!isEditMode && keepAdding) {
+        setFormData((current) => ({
+          ...current,
+          missionName: '',
+          dailyRate: '',
+          customerId: '',
+        }));
+        return;
+      }
+
       onClose();
     } catch (error) {
       setErrorMessage(
@@ -252,6 +274,17 @@ export default function AddAssignmentModal({
             </select>
           </label>
 
+          {!isEditMode ? (
+            <label className="assignment-keep-adding">
+              <input
+                type="checkbox"
+                checked={keepAdding}
+                onChange={(event) => setKeepAdding(event.target.checked)}
+              />
+              <span>Ajouter une autre mission après celle-ci</span>
+            </label>
+          ) : null}
+
           {errorMessage ? <p className="assignment-modal-error">{errorMessage}</p> : null}
 
           <div className="assignment-modal-actions">
@@ -265,7 +298,9 @@ export default function AddAssignmentModal({
                   : 'Création...'
                 : isEditMode
                   ? 'Enregistrer'
-                  : 'Créer la mission'}
+                  : keepAdding
+                    ? 'Créer et continuer'
+                    : 'Créer la mission'}
             </button>
           </div>
         </form>

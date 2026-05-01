@@ -15,6 +15,8 @@ import { PastDay } from 'common/enums/past_day';
 import { ActivityReport } from '../activity-reports/entities/activity-report.entity';
 import { Assignment } from '../assignments/entities/assignment.entity';
 
+const MAX_DAILY_PAST_DAY = Number(PastDay.THREE);
+
 @Injectable()
 export class ActivityReportsLinesService {
   constructor(
@@ -127,9 +129,9 @@ export class ActivityReportsLinesService {
       return total + Number(line.past_day);
     }, 0);
 
-    if (totalPastDay + Number(past_day) > Number(PastDay.FULL)) {
+    if (totalPastDay + Number(past_day) > MAX_DAILY_PAST_DAY) {
       throw new BadRequestException(
-        'Total past_day for a single day cannot exceed 1.',
+        'Total past_day for a single day cannot exceed 3.',
       );
     }
   }

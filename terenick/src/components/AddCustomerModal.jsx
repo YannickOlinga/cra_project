@@ -37,6 +37,7 @@ export default function AddCustomerModal({
   const [formData, setFormData] = useState(initialForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [keepAdding, setKeepAdding] = useState(false);
   const isEditMode = mode === 'edit';
 
   useEffect(() => {
@@ -44,12 +45,14 @@ export default function AddCustomerModal({
       setFormData(initialForm);
       setErrorMessage('');
       setIsSubmitting(false);
+      setKeepAdding(false);
       return;
     }
 
     setFormData(getCustomerForm(customer));
     setErrorMessage('');
     setIsSubmitting(false);
+    setKeepAdding(false);
   }, [customer, isOpen]);
 
   if (!isOpen) return null;
@@ -130,8 +133,14 @@ export default function AddCustomerModal({
       if (isEditMode) {
         onUpdated?.(data);
       } else {
-        onCreated?.(data);
+        onCreated?.(data, { keepAdding });
       }
+
+      if (!isEditMode && keepAdding) {
+        setFormData(initialForm);
+        return;
+      }
+
       onClose();
     } catch (error) {
       setErrorMessage(
@@ -208,6 +217,17 @@ export default function AddCustomerModal({
             </small>
           </label>
 
+          {!isEditMode ? (
+            <label className="customer-keep-adding">
+              <input
+                type="checkbox"
+                checked={keepAdding}
+                onChange={(event) => setKeepAdding(event.target.checked)}
+              />
+              <span>Ajouter un autre client après celui-ci</span>
+            </label>
+          ) : null}
+
           {errorMessage ? <p className="customer-modal-error">{errorMessage}</p> : null}
 
           <div className="customer-modal-actions">
@@ -221,7 +241,9 @@ export default function AddCustomerModal({
                   : 'Création...'
                 : isEditMode
                   ? 'Enregistrer'
-                  : 'Créer le client'}
+                  : keepAdding
+                    ? 'Créer et continuer'
+                    : 'Créer le client'}
             </button>
           </div>
         </form>
