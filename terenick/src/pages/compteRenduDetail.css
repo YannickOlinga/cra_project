@@ -87,12 +87,25 @@
   overflow: hidden;
 }
 
+.cr-calendar-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 1rem 1.15rem;
+  border-bottom: 1px solid #edf2f7;
+  background: #fbfcfd;
+}
+
 .cr-assignment-picker {
   display: grid;
   gap: 0.85rem;
   padding: 1.1rem 1.15rem;
   border-bottom: 1px solid #edf2f7;
   background: #fbfcfd;
+}
+
+.cr-assignment-picker-bottom {
+  border-top: 1px solid #edf2f7;
+  border-bottom: 0;
 }
 
 .cr-assignment-picker-label {
@@ -200,7 +213,8 @@
   display: flex;
   min-height: 132px;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 0.55rem;
   padding: 1rem;
   border-top: 0;
   border-left: 0;
@@ -296,6 +310,49 @@
   outline-offset: -2px;
 }
 
+.cr-calendar-missions {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.cr-calendar-mission-pill {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.32rem 0.45rem;
+  border: 1px solid rgba(23, 130, 75, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+  color: #30435b;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.cr-calendar-mission-pill.is-current {
+  border-color: rgba(23, 130, 75, 0.28);
+  background: rgba(23, 130, 75, 0.1);
+}
+
+.cr-calendar-mission-pill span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cr-calendar-mission-pill strong {
+  color: #17824b;
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+
+.cr-calendar-mission-more {
+  color: #5c6c7d;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
 .cr-calendar-selected-value {
   color: #2c3e50;
   font-size: 0.78rem;
@@ -361,6 +418,14 @@
 .cr-week-mission.is-current {
   border-color: rgba(23, 130, 75, 0.28);
   background: #f2fbf6;
+}
+
+.cr-week-mission.is-empty:not(.is-current) {
+  background: #fbfcfd;
+}
+
+.cr-week-mission.is-empty:not(.is-current) .cr-week-mission-days {
+  color: #7d8997;
 }
 
 .cr-week-mission-main {
@@ -499,4 +564,58 @@
 .cr-status.completed {
   background: #e8f5ee;
   color: #15803d;
+}
+
+@media print {
+  @page {
+    margin: 14mm;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  .cr-detail-content,
+  .cr-detail-content * {
+    visibility: visible;
+  }
+
+  .cr-detail-content {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    background: #fff;
+  }
+
+  .cr-sidebar,
+  .cr-detail-back,
+  .cr-detail-header-actions,
+  .cr-calendar-toolbar,
+  .cr-action-buttons {
+    display: none !important;
+  }
+
+  .cr-main-content {
+    margin: 0;
+    padding: 0;
+  }
+
+  .cr-detail-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .cr-detail-card,
+  .cr-calendar-card,
+  .cr-week-mission {
+    box-shadow: none;
+  }
+
+  .cr-calendar-cell {
+    min-height: 94px;
+    break-inside: avoid;
+  }
+
+  .cr-calendar-week {
+    break-inside: avoid;
+  }
 }

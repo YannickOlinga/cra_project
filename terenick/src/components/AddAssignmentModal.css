@@ -116,6 +116,23 @@
   cursor: not-allowed;
 }
 
+.assignment-keep-adding {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: #4f5d6e;
+  font-size: 0.94rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.assignment-keep-adding input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: #2c3e50;
+  cursor: pointer;
+}
+
 .assignment-modal-error {
   margin: 0;
   color: #d64545;

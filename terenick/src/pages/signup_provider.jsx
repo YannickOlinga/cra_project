@@ -123,7 +123,8 @@ function SignupProvider() {
       resetRecaptchaV2(recaptchaWidgetIdRef.current);
 
       window.setTimeout(() => {
-        navigate('/compte-rendu');
+        const redirectPath = (data.role ?? role) === 'provider' ? '/clients' : '/compte-rendu';
+        navigate(redirectPath);
       }, 1200);
     } catch (error) {
       const message =

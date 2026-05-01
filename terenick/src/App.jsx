@@ -68,7 +68,8 @@ return (
 <Route path="/compte-rendu/:id" element={<RequireAuth><CompteRenduDetail /></RequireAuth>} />
 <Route path="/missions" element={<RequireAuth><Missions /></RequireAuth>} />
 <Route path="/clients" element={<RequireAuth><Clients /></RequireAuth>} />
-<Route path="/notes-frais" element={<RequireAuth><NotesFrais /></RequireAuth>} />
+<Route path="/facturation" element={<RequireAuth><NotesFrais /></RequireAuth>} />
+<Route path="/notes-frais" element={<Navigate to="/facturation" replace />} />
 <Route path="/dashboard" element={<Navigate to="/compte-rendu" replace />} />
 <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
 <Route path="/client_interface" element={<Navigate to="/compte-rendu" replace />} />

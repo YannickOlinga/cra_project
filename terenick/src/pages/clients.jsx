@@ -5,6 +5,7 @@ import { FaPencil } from 'react-icons/fa6';
 import './compteRendu.css';
 import './clients.css';
 import AddCustomerModal from '../components/AddCustomerModal';
+import AddAssignmentModal from '../components/AddAssignmentModal';
 import DeleteCustomerModal from '../components/DeleteCustomerModal';
 import { exportRowsToCsv } from '../utils/csvExport';
 
@@ -16,6 +17,10 @@ export default function Clients() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
   const [deletingClient, setDeletingClient] = useState(null);
+  const [missionCustomer, setMissionCustomer] = useState(null);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedClientIds, setSelectedClientIds] = useState([]);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   useEffect(() => {
     const storedSession = localStorage.getItem('authSession');
@@ -86,8 +91,11 @@ export default function Clients() {
     };
   }, [session]);
 
-  function handleCustomerCreated(createdCustomer) {
+  function handleCustomerCreated(createdCustomer, options = {}) {
     setClients((current) => [createdCustomer, ...current]);
+    if (!options.keepAdding) {
+      setMissionCustomer(createdCustomer);
+    }
   }
 
   function handleCustomerUpdated(updatedCustomer) {
@@ -98,11 +106,80 @@ export default function Clients() {
 
   function handleCustomerDeleted(deletedCustomerId) {
     setClients((current) => current.filter((client) => client.id !== deletedCustomerId));
+    setSelectedClientIds((current) =>
+      current.filter((clientId) => clientId !== deletedCustomerId),
+    );
   }
 
   function handleLogout() {
     localStorage.removeItem('authSession');
     window.location.href = '/login';
+  }
+
+  function handleToggleSelectionMode() {
+    setIsSelectionMode((current) => !current);
+    setSelectedClientIds([]);
+  }
+
+  function handleToggleClientSelection(clientId) {
+    setSelectedClientIds((current) =>
+      current.includes(clientId)
+        ? current.filter((selectedId) => selectedId !== clientId)
+        : [...current, clientId],
+    );
+  }
+
+  async function handleBulkDeleteClients() {
+    if (!session?.token || selectedClientIds.length === 0 || isBulkDeleting) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Supprimer ${selectedClientIds.length} client${selectedClientIds.length > 1 ? 's' : ''} ?`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setIsBulkDeleting(true);
+
+    try {
+      const responses = await Promise.all(
+        selectedClientIds.map((clientId) =>
+          fetch(`${apiBaseUrl}/customers/${clientId}`, {
+            method: 'DELETE',
+            headers: {
+              Authorization: `Bearer ${session.token}`,
+            },
+          }),
+        ),
+      );
+
+      if (responses.some((response) => response.status === 401)) {
+        localStorage.removeItem('authSession');
+        window.location.href = '/login';
+        return;
+      }
+
+      if (responses.some((response) => !response.ok)) {
+        throw new Error('Impossible de supprimer tous les clients sélectionnés.');
+      }
+
+      setClients((current) =>
+        current.filter((client) => !selectedClientIds.includes(client.id)),
+      );
+      setSelectedClientIds([]);
+      setIsSelectionMode(false);
+    } catch (error) {
+      window.alert(
+        error instanceof Error
+          ? error.message
+          : 'Impossible de supprimer les clients sélectionnés.',
+      );
+    } finally {
+      setIsBulkDeleting(false);
+    }
   }
 
   function handleExportCsv() {
@@ -118,7 +195,7 @@ export default function Clients() {
           `${client.user?.first_name ?? ''} ${client.user?.last_name ?? ''}`.trim() ||
           `Client #${client.id}`,
         email: client.user?.email ?? '-',
-        entreprise: client.company || '-',
+        entreprise: client.company || 'Aucune entreprise',
       })),
     );
   }
@@ -155,9 +232,9 @@ export default function Clients() {
                 </a>
               </li>
               <li className="cr-nav-item">
-                <a href="/notes-frais" className="cr-nav-link">
+                <a href="/facturation" className="cr-nav-link">
                   <span className="cr-nav-icon"></span>
-                  <span>Notes de frais</span>
+                  <span>Facturation</span>
                 </a>
               </li>
               {/* <li className="cr-nav-item">
@@ -231,7 +308,27 @@ export default function Clients() {
 
         <section className="clients-board">
           <div className="clients-toolbar">
-            <div />
+            <div className="bulk-actions">
+              <button
+                type="button"
+                className="clients-toolbar-btn"
+                onClick={handleToggleSelectionMode}
+              >
+                {isSelectionMode ? 'Annuler la sélection' : 'Sélectionner'}
+              </button>
+              {isSelectionMode ? (
+                <button
+                  type="button"
+                  className="bulk-delete-btn"
+                  onClick={handleBulkDeleteClients}
+                  disabled={selectedClientIds.length === 0 || isBulkDeleting}
+                >
+                  {isBulkDeleting
+                    ? 'Suppression...'
+                    : `Supprimer (${selectedClientIds.length})`}
+                </button>
+              ) : null}
+            </div>
             <button type="button" className="clients-toolbar-btn" onClick={handleExportCsv}>
               Exporter (.csv)
             </button>
@@ -241,6 +338,7 @@ export default function Clients() {
             <table className="clients-table">
               <thead>
                 <tr>
+                  {isSelectionMode ? <th>Sélection</th> : null}
                   <th>Nom</th>
                   <th>Email</th>
                   <th>Entreprise</th>
@@ -250,8 +348,8 @@ export default function Clients() {
               <tbody>
                 {clients.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="clients-empty-cell">
-                      Aucun client trouvé.
+                    <td colSpan={isSelectionMode ? 5 : 4} className="clients-empty-cell">
+                      Aucun client trouvé. Ajoutez un client pour commencer.
                     </td>
                   </tr>
                 ) : (
@@ -262,9 +360,20 @@ export default function Clients() {
 
                     return (
                       <tr key={client.id}>
+                        {isSelectionMode ? (
+                          <td>
+                            <input
+                              type="checkbox"
+                              className="bulk-checkbox"
+                              checked={selectedClientIds.includes(client.id)}
+                              onChange={() => handleToggleClientSelection(client.id)}
+                              aria-label={`Sélectionner ${fullName}`}
+                            />
+                          </td>
+                        ) : null}
                         <td className="clients-name-cell">{fullName}</td>
                         <td>{client.user?.email ?? '-'}</td>
-                        <td>{client.company || '-'}</td>
+                        <td>{client.company || 'Aucune entreprise'}</td>
                         <td>
                           <div className="clients-actions-cell">
                             <button
@@ -311,6 +420,16 @@ export default function Clients() {
           customer={deletingClient}
           onClose={() => setDeletingClient(null)}
           onDeleted={handleCustomerDeleted}
+        />
+        <AddAssignmentModal
+          isOpen={Boolean(missionCustomer)}
+          onClose={() => setMissionCustomer(null)}
+          initialCustomerId={missionCustomer?.id ?? ''}
+          onCreated={(_, options) => {
+            if (!options?.keepAdding) {
+              setMissionCustomer(null);
+            }
+          }}
         />
       </main>
     </div>

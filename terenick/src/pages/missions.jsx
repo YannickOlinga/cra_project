@@ -14,12 +14,22 @@ const currencyFormatter = new Intl.NumberFormat('fr-FR', {
   currency: 'EUR',
 });
 
+function getCustomerDisplayName(customer) {
+  const fullName =
+    `${customer?.user?.first_name ?? ''} ${customer?.user?.last_name ?? ''}`.trim();
+
+  return customer?.company || fullName || 'Client inconnu';
+}
+
 export default function Missions() {
   const [session, setSession] = useState(null);
   const [missionRows, setMissionRows] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingMission, setEditingMission] = useState(null);
   const [deletingMissionId, setDeletingMissionId] = useState(null);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedMissionIds, setSelectedMissionIds] = useState([]);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   useEffect(() => {
     const storedSession = localStorage.getItem('authSession');
@@ -148,6 +158,9 @@ export default function Missions() {
       setMissionRows((current) =>
         current.filter((currentMission) => currentMission.id !== mission.id),
       );
+      setSelectedMissionIds((current) =>
+        current.filter((missionId) => missionId !== mission.id),
+      );
     } catch (error) {
       window.alert(
         error instanceof Error
@@ -156,6 +169,72 @@ export default function Missions() {
       );
     } finally {
       setDeletingMissionId(null);
+    }
+  }
+
+  function handleToggleSelectionMode() {
+    setIsSelectionMode((current) => !current);
+    setSelectedMissionIds([]);
+  }
+
+  function handleToggleMissionSelection(missionId) {
+    setSelectedMissionIds((current) =>
+      current.includes(missionId)
+        ? current.filter((selectedId) => selectedId !== missionId)
+        : [...current, missionId],
+    );
+  }
+
+  async function handleBulkDeleteMissions() {
+    if (!session?.token || selectedMissionIds.length === 0 || isBulkDeleting) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Supprimer ${selectedMissionIds.length} mission${selectedMissionIds.length > 1 ? 's' : ''} ?`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setIsBulkDeleting(true);
+
+    try {
+      const responses = await Promise.all(
+        selectedMissionIds.map((missionId) =>
+          fetch(`${apiBaseUrl}/assignments/${missionId}`, {
+            method: 'DELETE',
+            headers: {
+              Authorization: `Bearer ${session.token}`,
+            },
+          }),
+        ),
+      );
+
+      if (responses.some((response) => response.status === 401)) {
+        localStorage.removeItem('authSession');
+        window.location.href = '/login';
+        return;
+      }
+
+      if (responses.some((response) => !response.ok)) {
+        throw new Error('Impossible de supprimer toutes les missions sélectionnées.');
+      }
+
+      setMissionRows((current) =>
+        current.filter((mission) => !selectedMissionIds.includes(mission.id)),
+      );
+      setSelectedMissionIds([]);
+      setIsSelectionMode(false);
+    } catch (error) {
+      window.alert(
+        error instanceof Error
+          ? error.message
+          : 'Impossible de supprimer les missions sélectionnées.',
+      );
+    } finally {
+      setIsBulkDeleting(false);
     }
   }
 
@@ -170,7 +249,7 @@ export default function Missions() {
       ],
       missionRows.map((mission) => ({
         nom: mission.label || `mission ${mission.id}`,
-        client: mission.customer?.company || 'Client inconnu',
+        client: getCustomerDisplayName(mission.customer),
         emailClient: mission.customer?.user?.email || '-',
         tarifJournalier: Number(mission.hourly_rate || 0),
       })),
@@ -209,9 +288,9 @@ export default function Missions() {
                 </a>
               </li>
               <li className="cr-nav-item">
-                <a href="/notes-frais" className="cr-nav-link">
+                <a href="/facturation" className="cr-nav-link">
                   <span className="cr-nav-icon"></span>
-                  <span>Notes de frais</span>
+                  <span>Facturation</span>
                 </a>
               </li>
               {/* <li className="cr-nav-item">
@@ -287,6 +366,27 @@ export default function Missions() {
 
         <section className="missions-board">
           <div className="missions-toolbar">
+            <div className="bulk-actions">
+              <button
+                type="button"
+                className="missions-toolbar-btn"
+                onClick={handleToggleSelectionMode}
+              >
+                {isSelectionMode ? 'Annuler la sélection' : 'Sélectionner'}
+              </button>
+              {isSelectionMode ? (
+                <button
+                  type="button"
+                  className="bulk-delete-btn"
+                  onClick={handleBulkDeleteMissions}
+                  disabled={selectedMissionIds.length === 0 || isBulkDeleting}
+                >
+                  {isBulkDeleting
+                    ? 'Suppression...'
+                    : `Supprimer (${selectedMissionIds.length})`}
+                </button>
+              ) : null}
+            </div>
             <button type="button" className="missions-toolbar-btn" onClick={handleExportCsv}>
               Exporter (.csv)
             </button>
@@ -296,6 +396,7 @@ export default function Missions() {
             <table className="missions-table">
               <thead>
                 <tr>
+                  {isSelectionMode ? <th>Sélection</th> : null}
                   <th>Nom</th>
                   <th>Client</th>
                   <th>TJM</th>
@@ -303,51 +404,70 @@ export default function Missions() {
                 </tr>
               </thead>
               <tbody>
-                {missionRows.map((mission) => (
-                  <tr key={mission.id}>
-                    <td className="missions-name-cell">
-                      <span>{mission.label || `mission ${mission.id}`}</span>
-                    </td>
-                    <td>
-                      <div className="missions-client-block">
-                        <span className="missions-client-name">
-                          {mission.customer?.company || 'Client inconnu'}
-                        </span>
-                        <span className="missions-client-email">
-                          {mission.customer?.user?.email || '-'}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="missions-rate-cell">
-                      {currencyFormatter.format(Number(mission.hourly_rate || 0))}
-                      <span>/ jour</span>
-                    </td>
-                    <td>
-                      <div className="missions-actions-cell">
-                        <button
-                          type="button"
-                          className="missions-edit-btn"
-                          title="Modifier"
-                          onClick={() => {
-                            setEditingMission(mission);
-                            setShowAddModal(true);
-                          }}
-                        >
-                          <FaPencil />
-                        </button>
-                        <button
-                          type="button"
-                          className="missions-delete-btn"
-                          title="Supprimer"
-                          disabled={deletingMissionId === mission.id}
-                          onClick={() => handleDeleteMission(mission)}
-                        >
-                          <AiFillDelete />
-                        </button>
-                      </div>
+                {missionRows.length === 0 ? (
+                  <tr>
+                    <td colSpan={isSelectionMode ? 5 : 4} className="missions-empty-cell">
+                      Aucune mission trouvée. Ajoutez une mission pour commencer.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  missionRows.map((mission) => (
+                    <tr key={mission.id}>
+                      {isSelectionMode ? (
+                        <td>
+                          <input
+                            type="checkbox"
+                            className="bulk-checkbox"
+                            checked={selectedMissionIds.includes(mission.id)}
+                            onChange={() => handleToggleMissionSelection(mission.id)}
+                            aria-label={`Sélectionner ${mission.label || `mission ${mission.id}`}`}
+                          />
+                        </td>
+                      ) : null}
+                      <td className="missions-name-cell">
+                        <span>{mission.label || `mission ${mission.id}`}</span>
+                      </td>
+                      <td>
+                        <div className="missions-client-block">
+                          <span className="missions-client-name">
+                            {getCustomerDisplayName(mission.customer)}
+                          </span>
+                          <span className="missions-client-email">
+                            {mission.customer?.user?.email || '-'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="missions-rate-cell">
+                        {currencyFormatter.format(Number(mission.hourly_rate || 0))}
+                        <span>/ jour</span>
+                      </td>
+                      <td>
+                        <div className="missions-actions-cell">
+                          <button
+                            type="button"
+                            className="missions-edit-btn"
+                            title="Modifier"
+                            onClick={() => {
+                              setEditingMission(mission);
+                              setShowAddModal(true);
+                            }}
+                          >
+                            <FaPencil />
+                          </button>
+                          <button
+                            type="button"
+                            className="missions-delete-btn"
+                            title="Supprimer"
+                            disabled={deletingMissionId === mission.id}
+                            onClick={() => handleDeleteMission(mission)}
+                          >
+                            <AiFillDelete />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
