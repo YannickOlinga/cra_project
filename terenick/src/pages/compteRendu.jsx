@@ -39,78 +39,18 @@ function getReportStatusMeta(status) {
     : { etat: 'CRA créé', etatClass: 'in-progress' };
 }
 
-function buildActivityGroups(activities) {
-  const groups = new Map();
+function sortActivities(activities) {
+  return [...activities].sort((first, second) => {
+    if (first.year !== second.year) {
+      return second.year - first.year;
+    }
 
-  activities.forEach((activity) => {
-    const groupKey = `${activity.year}-${activity.month}`;
-    const activityReportIds = activity.reportIds?.length
-      ? activity.reportIds
-      : [activity.id];
-    const activityMissionNames = activity.missionNames?.length
-      ? activity.missionNames
-      : [activity.mission];
-    const activityAssignmentIds = activity.assignmentIds?.length
-      ? activity.assignmentIds
-      : [];
-    const existing = groups.get(groupKey) ?? {
-      id: activity.id,
-      reportIds: [],
-      assignmentIds: [],
-      periode: activity.periode,
-      missionNames: [],
-      prestataire: activity.prestataire,
-      totalValue: 0,
-      totalAmount: 0,
-      etat: activity.etat,
-      etatClass: activity.etatClass,
-      month: activity.month,
-      year: activity.year,
-    };
-
-    groups.set(groupKey, {
-      ...existing,
-      id: Math.min(existing.id, ...activityReportIds),
-      reportIds: [...existing.reportIds, ...activityReportIds],
-      assignmentIds: [...existing.assignmentIds, ...activityAssignmentIds],
-      missionNames: [...existing.missionNames, ...activityMissionNames],
-      totalValue: existing.totalValue + Number(activity.totalValue || 0),
-      totalAmount: existing.totalAmount + Number(activity.totalAmount || 0),
-      etat:
-        existing.etat === 'Terminé' && activity.etat === 'Terminé'
-          ? 'Terminé'
-          : 'CRA créé',
-      etatClass:
-        existing.etat === 'Terminé' && activity.etat === 'Terminé'
-          ? 'completed'
-          : 'in-progress',
-    });
-  });
-
-  return Array.from(groups.values())
-    .map((group) => {
-      const uniqueMissionNames = Array.from(new Set(group.missionNames));
-      const uniqueAssignmentIds = Array.from(new Set(group.assignmentIds));
-
-      return {
-        ...group,
-        assignmentIds: uniqueAssignmentIds,
-        mission:
-          uniqueMissionNames.length === 1
-            ? uniqueMissionNames[0]
-            : `${uniqueMissionNames.length} missions`,
-        missionNames: uniqueMissionNames,
-        tempsTotal: formatDays(group.totalValue),
-        montantTotal: currencyFormatter.format(group.totalAmount),
-      };
-    })
-    .sort((first, second) => {
-      if (first.year !== second.year) {
-        return second.year - first.year;
-      }
-
+    if (first.month !== second.month) {
       return second.month - first.month;
-    });
+    }
+
+    return second.id - first.id;
+  });
 }
 
 export default function CompteRendu() {
@@ -245,6 +185,7 @@ export default function CompteRendu() {
           totalValue: reportTotal.days,
           totalAmount: reportTotal.amount,
           tempsTotal: formatDays(reportTotal.days),
+          montantTotal: currencyFormatter.format(reportTotal.amount),
           etat: statusMeta.etat,
           etatClass: statusMeta.etatClass,
           month: report.month,
@@ -252,7 +193,7 @@ export default function CompteRendu() {
         };
       });
 
-      setActivities(buildActivityGroups(nextActivities));
+      setActivities(sortActivities(nextActivities));
       setReportTotals(totalsMap);
     } catch {
       if (!isCancelled()) {
@@ -594,6 +535,7 @@ export default function CompteRendu() {
           totalValue: reportTotal.days,
           totalAmount: reportTotal.amount,
           tempsTotal: formatDays(reportTotal.days),
+          montantTotal: currencyFormatter.format(reportTotal.amount),
           etat: 'CRA créé',
           etatClass: 'in-progress',
           month: createdReportData.month,
@@ -605,7 +547,7 @@ export default function CompteRendu() {
       return;
     }
 
-    setActivities((current) => buildActivityGroups([...nextActivities, ...current]));
+    setActivities((current) => sortActivities([...nextActivities, ...current]));
   };
 
   const handleUpdateReport = () => {

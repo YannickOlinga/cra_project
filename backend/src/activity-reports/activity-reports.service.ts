@@ -65,26 +65,6 @@ export class ActivityReportsService {
       );
     }
 
-    // One provider has one monthly CRA. Missions are attached to that report.
-    const existingReport = await this.activityReportsRepository.findOne({
-      where: {
-        month: createActivityReportDto.month,
-        year: createActivityReportDto.year,
-        providers_id: authUser.profileId,
-      },
-    });
-
-    if (existingReport) {
-      const existingAssignmentIds = this.getReportAssignmentIds(existingReport);
-      existingReport.assignment_ids = Array.from(
-        new Set([...existingAssignmentIds, ...assignmentIds]),
-      );
-      existingReport.assignments_id =
-        existingReport.assignments_id ?? existingReport.assignment_ids[0] ?? null;
-
-      return this.activityReportsRepository.save(existingReport);
-    }
-
     const activityReport = this.activityReportsRepository.create({
       month: createActivityReportDto.month,
       year: createActivityReportDto.year,

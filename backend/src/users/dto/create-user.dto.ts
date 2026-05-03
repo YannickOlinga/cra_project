@@ -11,7 +11,7 @@ export class CreateUserDto {
   @MaxLength(55)
   last_name: string;
 
-  @IsEmail()
+  @IsEmail({ require_tld: false }, { message: 'Veuillez saisir une adresse e-mail valide.' })
   @MaxLength(30)
   email: string;
 

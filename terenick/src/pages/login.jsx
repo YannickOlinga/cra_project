@@ -3,8 +3,41 @@ import { useNavigate } from 'react-router-dom';
 import { FaRegEye, FaRegEyeSlash } from 'react-icons/fa';
 import Navbar from '../components/Navbar';
 import './login.css';
+import {
+  clearRateLimit,
+  formatRateLimitTime,
+  getRateLimitRemainingSeconds,
+  recordRateLimitAttempt,
+} from '../utils/rateLimit';
 
 const apiBaseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
+const loginRateLimitKey = 'rateLimit:login';
+
+function getLoginErrorMessage(data) {
+  const messages = Array.isArray(data?.message)
+    ? data.message
+    : [data?.message].filter(Boolean);
+
+  if (
+    messages.some((message) =>
+      String(message).toLowerCase().includes('email must be an email'),
+    )
+  ) {
+    return 'Veuillez saisir une adresse e-mail valide.';
+  }
+
+  if (
+    messages.some((message) =>
+      String(message)
+        .toLowerCase()
+        .includes('password must be longer than or equal to 8 characters'),
+    )
+  ) {
+    return 'Le mot de passe doit contenir au moins 8 caractères.';
+  }
+
+  return messages.join(' ') || 'Identifiants invalides.';
+}
 
 function Login() {
   const navigate = useNavigate();
@@ -13,6 +46,9 @@ function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [rateLimitRemaining, setRateLimitRemaining] = useState(() =>
+    getRateLimitRemainingSeconds(loginRateLimitKey),
+  );
 
   useEffect(() => {
     try {
@@ -25,9 +61,31 @@ function Login() {
     }
   }, [navigate]);
 
+  useEffect(() => {
+    if (rateLimitRemaining <= 0) {
+      return undefined;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setRateLimitRemaining(getRateLimitRemainingSeconds(loginRateLimitKey));
+    }, 1000);
+
+    return () => window.clearInterval(intervalId);
+  }, [rateLimitRemaining]);
+
   async function handleSubmit(event) {
     event.preventDefault();
     setErrorMessage('');
+
+    const currentRemaining = getRateLimitRemainingSeconds(loginRateLimitKey);
+    if (currentRemaining > 0) {
+      setRateLimitRemaining(currentRemaining);
+      setErrorMessage(
+        `Trop de tentatives. Réessayez dans ${formatRateLimitTime(currentRemaining)}.`,
+      );
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -45,7 +103,7 @@ function Login() {
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        throw new Error(data.message ?? 'Identifiants invalides.');
+        throw new Error(getLoginErrorMessage(data));
       }
 
       localStorage.setItem(
@@ -58,9 +116,16 @@ function Login() {
         }),
       );
 
+      clearRateLimit(loginRateLimitKey);
       navigate('/compte-rendu');
     } catch (error) {
-      setErrorMessage(error.message);
+      const nextRemaining = recordRateLimitAttempt(loginRateLimitKey);
+      setRateLimitRemaining(nextRemaining);
+      setErrorMessage(
+        nextRemaining > 0
+          ? `Trop de tentatives. Réessayez dans ${formatRateLimitTime(nextRemaining)}.`
+          : error.message,
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -103,8 +168,12 @@ function Login() {
               </button>
             </div>
             {errorMessage ? <p className="login-error">{errorMessage}</p> : null}
-            <button type="submit" className="login-submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Connexion...' : 'Se connecter'}
+            <button type="submit" className="login-submit" disabled={isSubmitting || rateLimitRemaining > 0}>
+              {rateLimitRemaining > 0
+                ? `Réessayer dans ${formatRateLimitTime(rateLimitRemaining)}`
+                : isSubmitting
+                  ? 'Connexion...'
+                  : 'Se connecter'}
             </button>
             <p className="login-text">
               Vous n'avez pas de compte ? <a href="/signup_provider">S'inscrire</a>

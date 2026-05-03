@@ -13,7 +13,7 @@ export class CreateCustomerDto {
   @MaxLength(110)
   name: string;
 
-  @IsEmail()
+  @IsEmail({ require_tld: false }, { message: 'Veuillez saisir une adresse e-mail valide.' })
   @MaxLength(255)
   email: string;
 
