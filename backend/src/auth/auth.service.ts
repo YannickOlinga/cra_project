@@ -1,6 +1,7 @@
 import {
   Injectable,
   BadRequestException,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -28,6 +29,8 @@ type ResetPasswordPayload = {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly usersService: UsersService,
     private readonly customersService: CustomersService,
@@ -123,6 +126,11 @@ export class AuthService {
         profileId: customer.id,
       };
 
+      await this.sendRegistrationConfirmationEmail(
+        user.email,
+        user.first_name,
+      );
+
       return {
         access_token: await this.jwtService.signAsync(payload),
         role: AccountRole.Customer,
@@ -141,6 +149,8 @@ export class AuthService {
       role: AccountRole.Provider,
       profileId: provider.id,
     };
+
+    await this.sendRegistrationConfirmationEmail(user.email, user.first_name);
 
     return {
       access_token: await this.jwtService.signAsync(payload),
@@ -203,5 +213,22 @@ export class AuthService {
     return {
       message: 'Mot de passe modifie avec succes',
     };
+  }
+
+  private async sendRegistrationConfirmationEmail(
+    email: string,
+    firstName: string,
+  ) {
+    try {
+      await this.mailService.sendRegistrationConfirmationEmail(
+        email,
+        firstName,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Impossible d'envoyer l'email de confirmation a ${email}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+    }
   }
 }
