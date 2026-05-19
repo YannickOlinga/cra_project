@@ -5,7 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { CreateActivityReportsLineDto } from './dto/create-activity-reports-line.dto';
 import { UpdateActivityReportsLineDto } from './dto/update-activity-reports-line.dto';
 import { ActivityReportsLine } from './entities/activity-reports-line.entity';
@@ -83,6 +83,7 @@ export class ActivityReportsLinesService {
   private async assertCanReadReportLines(
     report: ActivityReport,
     authUser: AuthenticatedUser,
+    assignmentId?: number,
   ): Promise<void> {
     if (
       authUser.role === AccountRole.Provider &&
@@ -108,7 +109,40 @@ export class ActivityReportsLinesService {
       if (!accessibleAssignment) {
         throw new ForbiddenException('You can only access your own activity lines.');
       }
+
+      if (assignmentId !== undefined) {
+        const canReadAssignment = await this.assignmentsRepository.exists({
+          where: {
+            id: assignmentId,
+            customers_id: authUser.profileId,
+          },
+        });
+
+        if (!canReadAssignment) {
+          throw new ForbiddenException('You can only access your own activity lines.');
+        }
+      }
     }
+  }
+
+  private async getReadableAssignmentIds(
+    report: ActivityReport,
+    authUser: AuthenticatedUser,
+  ): Promise<number[]> {
+    const reportAssignmentIds = this.getReportAssignmentIds(report);
+
+    if (authUser.role !== AccountRole.Customer) {
+      return reportAssignmentIds;
+    }
+
+    const accessibleAssignments = await this.assignmentsRepository.find({
+      where: {
+        id: In(reportAssignmentIds),
+        customers_id: authUser.profileId,
+      },
+    });
+
+    return accessibleAssignments.map((assignment) => assignment.id);
   }
 
   private async validateDailyPastDayLimit(
@@ -167,8 +201,20 @@ export class ActivityReportsLinesService {
 
     await this.assertCanReadReportLines(report, authUser);
 
+    const readableAssignmentIds = await this.getReadableAssignmentIds(report, authUser);
+
+    if (
+      authUser.role === AccountRole.Customer &&
+      readableAssignmentIds.length === 0
+    ) {
+      return [];
+    }
+
     return this.activityReportsLineRepository.find({
-      where: { activity_reports_id },
+      where:
+        authUser.role === AccountRole.Customer
+          ? { activity_reports_id, assignments_id: In(readableAssignmentIds) }
+          : { activity_reports_id },
       relations: ['assignment', 'activity_report'],
     });
   }
@@ -183,7 +229,11 @@ export class ActivityReportsLinesService {
       throw new NotFoundException(`Activity Report Line #${id} not found.`);
     }
 
-    await this.assertCanReadReportLines(line.activity_report, authUser);
+    await this.assertCanReadReportLines(
+      line.activity_report,
+      authUser,
+      line.assignments_id,
+    );
 
     return line;
   }
